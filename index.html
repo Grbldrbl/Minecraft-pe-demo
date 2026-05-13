@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>Nether Reactor Simulator</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <div id="titleScreen" class="overlay">
+      <img id="logo" src="assets/logo.png" alt="Minecraft Pocket Edition logo" />
+      <div class="title-panel">
+        <h1>Nether Reactor Simulator</h1>
+        <p>Creative mode • tablet controls • 3D</p>
+        <button id="startBtn">Start</button>
+      </div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div id="topBar">
+        <div id="hotbar"></div>
+      </div>
+
+      <div id="crosshair">+</div>
+      <div id="message"></div>
+
+      <div id="leftControls">
+        <button class="ctrl move" data-act="forward">▲</button>
+        <div class="middleRow">
+          <button class="ctrl move" data-act="left">◀</button>
+          <button class="ctrl move" data-act="back">▼</button>
+          <button class="ctrl move" data-act="right">▶</button>
+        </div>
+      </div>
+
+      <div id="rightControls">
+        <button class="ctrl action" id="jumpBtn">Jump</button>
+        <button class="ctrl action" id="breakBtn">Break</button>
+        <button class="ctrl action primary" id="placeBtn">Place</button>
+        <button class="ctrl action reactor" id="activateBtn">Activate</button>
+      </div>
+
+      <div id="lookPad">
+        <div class="look-label">LOOK</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
