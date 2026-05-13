@@ -12,6 +12,45 @@ const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
 const LOOK_SENSITIVITY = 0.0032;
 
+// Safer atlas picks based on the classic terrain sheet layout.
+// These are intentionally conservative.
+const TILES = {
+  grass_top: [0, 0],
+  stone: [1, 0],
+  dirt: [2, 0],
+  grass_side: [3, 0],
+  planks: [4, 0],
+  cobblestone: [0, 1],
+  bedrock: [1, 1],
+  sand: [2, 1],
+  gravel: [3, 1],
+  wood_side: [4, 1],
+  wood_top: [5, 1],
+  gold: [7, 1],
+  iron: [6, 1],
+  diamond: [8, 1],
+  bricks: [7, 0],
+  bookshelf: [3, 2],
+  mossy: [4, 2],
+  obsidian: [5, 2],
+  glass: [1, 3],
+  leaves: [5, 3],
+  wool_white: [0, 4],
+  wool_red: [1, 4],
+  wool_yellow: [2, 4],
+  wool_green: [3, 4],
+  wool_blue: [4, 4],
+  pumpkin_top: [6, 6],
+  pumpkin_side: [6, 7],
+  tnt_side: [8, 0],
+  tnt_top: [9, 0],
+  tnt_bottom: [10, 0],
+  reactor_core: [7, 4],
+  glowing_obsidian: [7, 13],
+  netherrack: [7, 15],
+  lava: [15, 15],
+};
+
 const app = {
   scene: null,
   camera: null,
@@ -45,61 +84,64 @@ const app = {
 };
 
 const BLOCKS = {
-  air: { solid: false, placeable: false },
+  air: {
+    solid: false,
+    placeable: false,
+  },
 
   grass: {
     solid: true,
     placeable: true,
     faces: {
-      top: [0, 0],
-      bottom: [2, 0],
-      side: [3, 0],
+      top: TILES.grass_top,
+      bottom: TILES.dirt,
+      side: TILES.grass_side,
     },
   },
 
   dirt: {
     solid: true,
     placeable: true,
-    faces: { all: [2, 0] },
-  },
-
-  cobblestone: {
-    solid: true,
-    placeable: true,
-    faces: { all: [1, 0] },
+    faces: { all: TILES.dirt },
   },
 
   stone: {
     solid: true,
     placeable: true,
-    faces: { all: [0, 1] },
+    faces: { all: TILES.stone },
+  },
+
+  cobblestone: {
+    solid: true,
+    placeable: true,
+    faces: { all: TILES.cobblestone },
   },
 
   sand: {
     solid: true,
     placeable: true,
-    faces: { all: [2, 1] },
+    faces: { all: TILES.sand },
   },
 
   gravel: {
     solid: true,
     placeable: true,
-    faces: { all: [3, 1] },
+    faces: { all: TILES.gravel },
   },
 
   planks: {
     solid: true,
     placeable: true,
-    faces: { all: [4, 0] },
+    faces: { all: TILES.planks },
   },
 
   wood: {
     solid: true,
     placeable: true,
     faces: {
-      top: [5, 1],
-      bottom: [5, 1],
-      side: [4, 1],
+      top: TILES.wood_top,
+      bottom: TILES.wood_top,
+      side: TILES.wood_side,
     },
   },
 
@@ -107,120 +149,131 @@ const BLOCKS = {
     solid: true,
     placeable: true,
     transparent: true,
-    faces: { all: [5, 3] },
+    faces: { all: TILES.leaves },
   },
 
   glass: {
     solid: true,
     placeable: true,
     transparent: true,
-    faces: { all: [1, 3] },
+    faces: { all: TILES.glass },
+  },
+
+  bricks: {
+    solid: true,
+    placeable: true,
+    faces: { all: TILES.bricks },
   },
 
   bookshelf: {
     solid: true,
     placeable: true,
     faces: {
-      top: [4, 0],
-      bottom: [4, 0],
-      side: [3, 2],
+      top: TILES.planks,
+      bottom: TILES.planks,
+      side: TILES.bookshelf,
     },
-  },
-
-  bricks: {
-    solid: true,
-    placeable: true,
-    faces: { all: [7, 0] },
   },
 
   mossy_cobblestone: {
     solid: true,
     placeable: true,
-    faces: { all: [4, 2] },
+    faces: { all: TILES.mossy },
   },
 
   obsidian: {
     solid: true,
     placeable: true,
-    faces: { all: [5, 2] },
+    faces: { all: TILES.obsidian },
   },
 
   gold: {
     solid: true,
     placeable: true,
-    faces: { all: [7, 1] },
+    faces: { all: TILES.gold },
   },
 
   iron: {
     solid: true,
     placeable: true,
-    faces: { all: [6, 1] },
+    faces: { all: TILES.iron },
   },
 
   diamond: {
     solid: true,
     placeable: true,
-    faces: { all: [8, 1] },
+    faces: { all: TILES.diamond },
   },
 
   tnt: {
     solid: true,
     placeable: true,
     faces: {
-      top: [9, 0],
-      bottom: [10, 0],
-      side: [8, 0],
+      top: TILES.tnt_top,
+      bottom: TILES.tnt_bottom,
+      side: TILES.tnt_side,
     },
   },
 
   wool_white: {
     solid: true,
     placeable: true,
-    faces: { all: [0, 4] },
+    faces: { all: TILES.wool_white },
   },
 
   wool_red: {
     solid: true,
     placeable: true,
-    faces: { all: [1, 4] },
+    faces: { all: TILES.wool_red },
   },
 
   wool_yellow: {
     solid: true,
     placeable: true,
-    faces: { all: [2, 4] },
+    faces: { all: TILES.wool_yellow },
   },
 
   wool_green: {
     solid: true,
     placeable: true,
-    faces: { all: [3, 4] },
+    faces: { all: TILES.wool_green },
   },
 
   wool_blue: {
     solid: true,
     placeable: true,
-    faces: { all: [4, 4] },
+    faces: { all: TILES.wool_blue },
+  },
+
+  pumpkin: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: TILES.pumpkin_top,
+      bottom: TILES.pumpkin_top,
+      side: TILES.pumpkin_side,
+      front: TILES.pumpkin_side,
+    },
   },
 
   reactor_core: {
     solid: true,
     placeable: true,
-    emissive: 0x552266,
-    faces: { all: [7, 1] },
+    emissive: 0x5a2a88,
+    faces: { all: TILES.reactor_core },
   },
 
   glowing_obsidian: {
     solid: true,
     placeable: true,
     emissive: 0xa24dff,
-    faces: { all: [7, 13] },
+    faces: { all: TILES.glowing_obsidian },
   },
 
   netherrack: {
     solid: true,
     placeable: true,
-    faces: { all: [7, 15] },
+    faces: { all: TILES.netherrack },
   },
 
   lava: {
@@ -228,34 +281,23 @@ const BLOCKS = {
     placeable: true,
     transparent: true,
     emissive: 0xff6a00,
-    faces: { all: [15, 15] },
-  },
-
-  pumpkin: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: [6, 6],
-      bottom: [6, 6],
-      side: [6, 7],
-      front: [6, 7],
-    },
+    faces: { all: TILES.lava },
   },
 };
 
 const HOTBAR = [
   "grass",
   "dirt",
-  "cobblestone",
   "stone",
+  "cobblestone",
+  "sand",
+  "gravel",
   "planks",
   "wood",
   "leaves",
   "glass",
-  "sand",
-  "gravel",
-  "bookshelf",
   "bricks",
+  "bookshelf",
   "mossy_cobblestone",
   "obsidian",
   "gold",
@@ -267,11 +309,11 @@ const HOTBAR = [
   "wool_yellow",
   "wool_green",
   "wool_blue",
+  "pumpkin",
   "reactor_core",
   "glowing_obsidian",
   "netherrack",
   "lava",
-  "pumpkin",
 ];
 
 const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
@@ -355,12 +397,13 @@ function buildHotbar() {
   HOTBAR.forEach((blockId) => {
     const slot = document.createElement("button");
     slot.className = "slot" + (blockId === app.selectedBlockId ? " selected" : "");
+    slot.type = "button";
     slot.dataset.block = blockId;
 
     const icon = document.createElement("canvas");
     icon.width = 16;
     icon.height = 16;
-    drawTileToCanvas(icon, getFaceTile(blockId, "front"));
+    drawTileToCanvas(icon, getIconTile(blockId));
 
     slot.appendChild(icon);
 
@@ -375,6 +418,12 @@ function buildHotbar() {
   });
 
   showMessage(`Selected: ${prettyName(app.selectedBlockId)}`);
+}
+
+function getIconTile(blockId) {
+  const def = BLOCKS[blockId];
+  if (!def?.faces) return [0, 0];
+  return def.faces.front || def.faces.side || def.faces.top || def.faces.all || [0, 0];
 }
 
 function prettyName(id) {
@@ -908,4 +957,4 @@ function animate(time = 0) {
   updateCamera();
   updateHighlight();
   app.renderer.render(app.scene, app.camera);
-}
+    }
