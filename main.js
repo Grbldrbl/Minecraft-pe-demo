@@ -37,27 +37,29 @@ const app = {
 };
 
 const BLOCKS = {
-  air: { solid: false, placeable: false },
-  grass: { faces: { all: [0, 0] }, solid: true, placeable: true, label: "Grass" },
-  cobblestone: { faces: { all: [1, 0] }, solid: true, placeable: true, label: "Cobblestone" },
-  planks: { faces: { all: [4, 0] }, solid: true, placeable: true, label: "Planks" },
-  reactor_core: { faces: { all: [7, 1] }, solid: true, placeable: true, emissive: 0x552266, label: "Reactor Core" },
-  gold: { faces: { all: [6, 13] }, solid: true, placeable: true, label: "Gold Block" },
-  obsidian: { faces: { all: [15, 14] }, solid: true, placeable: true, label: "Obsidian" },
+  air: { solid: false, placeable: false, inventory: false },
+  grass: { faces: { all: [0, 0] }, solid: true, placeable: true, inventory: true, label: "Grass" },
+  cobblestone: { faces: { all: [1, 0] }, solid: true, placeable: true, inventory: true, label: "Cobblestone" },
+  planks: { faces: { all: [4, 0] }, solid: true, placeable: true, inventory: true, label: "Planks" },
+  reactor_core: { faces: { all: [7, 1] }, solid: true, placeable: true, inventory: true, emissive: 0x552266, label: "Reactor Core" },
+  gold: { faces: { all: [6, 13] }, solid: true, placeable: true, inventory: true, label: "Gold Block" },
+  obsidian: { faces: { all: [15, 14] }, solid: true, placeable: true, inventory: true, label: "Obsidian" },
   glowing_obsidian: {
-    faces: { all: [14, 13] },
+    faces: { all: [11, 14] },
     solid: true,
-    placeable: true,
+    placeable: false,
+    inventory: false,
     emissive: 0xaa66ff,
     label: "Glowing Obsidian",
   },
-  netherrack: { faces: { all: [1, 15] }, solid: true, placeable: true, label: "Netherrack" },
-  quartz: { faces: { all: [0, 14] }, solid: true, placeable: true, label: "Quartz" },
-  pumpkin: { faces: { all: [6, 7] }, solid: true, placeable: true, label: "Pumpkin" },
+  netherrack: { faces: { all: [1, 15] }, solid: true, placeable: true, inventory: true, label: "Netherrack" },
+  quartz: { faces: { all: [0, 14] }, solid: true, placeable: true, inventory: true, label: "Quartz" },
+  pumpkin: { faces: { all: [6, 7] }, solid: true, placeable: true, inventory: true, label: "Pumpkin" },
   lava: {
     faces: { all: [15, 15] },
     solid: false,
     placeable: true,
+    inventory: true,
     transparent: true,
     emissive: 0xff6600,
     label: "Lava",
@@ -65,7 +67,7 @@ const BLOCKS = {
 };
 
 const HOTBAR_SIZE = 8;
-const INVENTORY_BLOCKS = Object.keys(BLOCKS).filter((id) => BLOCKS[id].placeable);
+const INVENTORY_BLOCKS = Object.keys(BLOCKS).filter((id) => BLOCKS[id].inventory);
 
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
@@ -88,10 +90,10 @@ const hotbarState = [
   "gold",
   "obsidian",
   "reactor_core",
-  "glowing_obsidian",
   "netherrack",
   "quartz",
   "planks",
+  "pumpkin",
 ];
 
 startBtn.addEventListener("click", init);
@@ -109,7 +111,7 @@ async function init() {
   titleScreen.classList.add("hidden");
   hud.classList.remove("hidden");
   app.running = true;
-  showMessage("Look on the right pad. Inventory added.");
+  showMessage("Inventory fixed. Glowing obsidian is reactor-only.");
   animate();
 }
 
@@ -153,6 +155,7 @@ function buildInventory() {
 
   INVENTORY_BLOCKS.forEach((blockId) => {
     const item = document.createElement("button");
+    item.type = "button";
     item.className = "inventoryItem" + (blockId === app.selectedBlockId ? " selected" : "");
     item.dataset.block = blockId;
 
@@ -168,8 +171,9 @@ function buildInventory() {
     item.addEventListener("click", () => {
       app.selectedBlockId = blockId;
       hotbarState[0] = blockId;
-      syncSelections();
       buildHotbar();
+      syncSelections();
+      setInventoryOpen(false);
       showMessage(`Selected: ${BLOCKS[blockId].label}`);
     });
 
@@ -182,6 +186,7 @@ function buildHotbar() {
   for (let i = 0; i < HOTBAR_SIZE; i++) {
     const blockId = hotbarState[i];
     const slot = document.createElement("button");
+    slot.type = "button";
     slot.className = "slot" + (blockId === app.selectedBlockId ? " selected" : "");
     slot.dataset.index = String(i);
 
@@ -394,10 +399,24 @@ function bindControls() {
   lookPad.addEventListener("pointercancel", endLook);
   lookPad.addEventListener("lostpointercapture", endLook);
 
-  inventoryBtn.addEventListener("click", () => setInventoryOpen(true));
-  closeInventoryBtn.addEventListener("click", () => setInventoryOpen(false));
-  inventoryOverlay.addEventListener("click", (e) => {
-    if (e.target === inventoryOverlay) setInventoryOpen(false);
+  inventoryBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setInventoryOpen(true);
+  });
+
+  closeInventoryBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setInventoryOpen(false);
+  });
+
+  inventoryOverlay.addEventListener("pointerdown", (e) => {
+    if (e.target === inventoryOverlay) {
+      e.preventDefault();
+      e.stopPropagation();
+      setInventoryOpen(false);
+    }
   });
 }
 
@@ -441,7 +460,7 @@ function setInventoryOpen(open) {
 function updateCamera() {
   app.camera.position.set(
     app.playerPos.x,
-    app.playerPos.y + (EYE_HEIGHT - PLAYER_HEIGHT / 2),
+    app.playerPos.y + (EYE_HEIGHT - PLAYER_HEIGHT / PLAYER_HEIGHT),
     app.playerPos.z
   );
 
@@ -553,7 +572,10 @@ function updateHighlight() {
 function breakTargetBlock() {
   const hit = raycastBlocks();
   if (!hit) return;
-  const { x, y, z } = hit.object.userData;
+  const { x, y, z, blockId } = hit.object.userData;
+  if (blockId === "reactor_core") {
+    showMessage("You can break it, but maybe don't.");
+  }
   setBlock(x, y, z, "air");
 }
 
