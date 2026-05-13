@@ -1,16 +1,13 @@
 :root {
   --ui-bg: rgba(20, 20, 20, 0.45);
-  --ui-bg-strong: rgba(20, 20, 20, 0.82);
   --ui-border: rgba(255, 255, 255, 0.16);
   --ui-text: #ffffff;
-  --accent: #a56cff;
 }
 
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  touch-action: none;
 }
 
 html,
@@ -22,6 +19,7 @@ body {
   background: #000;
   font-family: Arial, Helvetica, sans-serif;
   color: var(--ui-text);
+  touch-action: none;
 }
 
 body {
@@ -29,19 +27,18 @@ body {
   inset: 0;
 }
 
-#app,
-#game {
+#app {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-#app {
-  position: relative;
-}
-
 #game {
+  width: 100%;
+  height: 100%;
   display: block;
   image-rendering: pixelated;
+  touch-action: none;
 }
 
 .overlay,
@@ -51,12 +48,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
 }
 
 .overlay {
   flex-direction: column;
   gap: 18px;
+  padding: 24px;
   background:
     radial-gradient(circle at center, rgba(60, 0, 80, 0.18), rgba(0, 0, 0, 0.78)),
     linear-gradient(to bottom, #203040, #0b0b0b);
@@ -64,9 +61,14 @@ body {
 }
 
 #inventoryOverlay {
-  background: rgba(0, 0, 0, 0.52);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(3px);
   z-index: 50;
+  padding: 24px;
+}
+
+.hidden {
+  display: none !important;
 }
 
 #logo {
@@ -76,7 +78,7 @@ body {
 
 .title-panel,
 #inventoryPanel {
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.68);
   border: 1px solid var(--ui-border);
   border-radius: 16px;
   padding: 18px 20px;
@@ -114,72 +116,6 @@ body {
   padding: 4px;
 }
 
-.inventoryItem,
-.slot,
-#inventoryBtn,
-.title-panel button,
-.inventoryHeader button {
-  border: none;
-  border-radius: 12px;
-}
-
-.inventoryItem,
-.slot {
-  min-height: 70px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 2px solid rgba(255,255,255,0.12);
-  color: #fff;
-}
-
-.inventoryItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px;
-  text-align: center;
-  font-size: 12px;
-}
-
-.inventoryItem.selected,
-.slot.selected {
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(165, 108, 255, 0.55);
-}
-
-.inventoryItem canvas,
-.slot canvas {
-  width: 40px;
-  height: 40px;
-  image-rendering: pixelated;
-}
-
-.title-panel h1 {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-}
-
-.title-panel p {
-  margin: 0 0 16px;
-  opacity: 0.9;
-}
-
-.title-panel button,
-.inventoryHeader button,
-#inventoryBtn {
-  padding: 12px 18px;
-  background: linear-gradient(180deg, #7bff91, #2ca94c);
-  color: #081108;
-  font-weight: 700;
-  font-size: 1rem;
-  pointer-events: auto;
-}
-
-.hidden {
-  display: none !important;
-}
-
 #hud {
   position: absolute;
   inset: 0;
@@ -195,6 +131,7 @@ body {
   width: min(96vw, 900px);
   display: flex;
   justify-content: center;
+  pointer-events: none;
 }
 
 #hotbarWrap {
@@ -213,12 +150,66 @@ body {
   gap: 6px;
 }
 
+.slot,
+.inventoryItem,
+#inventoryBtn,
+.title-panel button,
+.inventoryHeader button,
+.ctrl {
+  border: none;
+  border-radius: 12px;
+}
+
+.slot,
+.inventoryItem {
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(255,255,255,0.12);
+  color: #fff;
+}
+
 .slot {
   width: 52px;
   height: 52px;
   display: grid;
   place-items: center;
   overflow: hidden;
+  pointer-events: auto;
+}
+
+.inventoryItem {
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.slot.selected,
+.inventoryItem.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(165, 108, 255, 0.55);
+}
+
+.slot canvas,
+.inventoryItem canvas {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+}
+
+#inventoryBtn,
+.title-panel button,
+.inventoryHeader button {
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #7bff91, #2ca94c);
+  color: #081108;
+  font-weight: 700;
+  font-size: 1rem;
   pointer-events: auto;
 }
 
@@ -291,6 +282,7 @@ body {
   border: 1px dashed rgba(255,255,255,0.18);
   background: rgba(255,255,255,0.03);
   pointer-events: auto;
+  touch-action: none;
 }
 
 .lookLabel {
@@ -306,16 +298,13 @@ body {
   border: 1px solid rgba(255,255,255,0.14);
   background: linear-gradient(180deg, rgba(100,100,100,0.55), rgba(40,40,40,0.75));
   color: #fff;
-  border-radius: 16px;
   min-width: 62px;
   min-height: 62px;
   font-size: 22px;
   font-weight: 700;
-  backdrop-filter: blur(2px);
   pointer-events: auto;
 }
 
-.ctrl:active,
 .ctrl.active {
   transform: scale(0.98);
   background: linear-gradient(180deg, rgba(160,160,160,0.7), rgba(70,70,70,0.86));
