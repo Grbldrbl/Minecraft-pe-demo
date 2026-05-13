@@ -1,9 +1,9 @@
 import * as THREE from "https://unpkg.com/three@0.160.1/build/three.module.js";
 
 const TILE = 16;
-const WORLD_W = 16;
-const WORLD_H = 8;
-const WORLD_D = 16;
+const WORLD_W = 24;
+const WORLD_H = 12;
+const WORLD_D = 24;
 const REACH = 8;
 const PLAYER_HEIGHT = 1.7;
 const EYE_HEIGHT = 1.55;
@@ -25,7 +25,7 @@ const app = {
   yaw: 0,
   pitch: -0.35,
   velocity: new THREE.Vector3(),
-  playerPos: new THREE.Vector3(8, 3.5, 12),
+  playerPos: new THREE.Vector3(12, 4, 18),
   onGround: false,
   touchMoveState: {
     forward: false,
@@ -45,120 +45,233 @@ const app = {
 };
 
 const BLOCKS = {
-  air: {
-    solid: false,
-    placeable: false,
-  },
+  air: { solid: false, placeable: false },
 
   grass: {
     solid: true,
     placeable: true,
     faces: {
-      top: [3, 3],
+      top: [0, 0],
       bottom: [2, 0],
       side: [3, 0],
     },
   },
 
+  dirt: {
+    solid: true,
+    placeable: true,
+    faces: { all: [2, 0] },
+  },
+
   cobblestone: {
     solid: true,
     placeable: true,
-    faces: {
-      all: [0, 0],
-    },
+    faces: { all: [1, 0] },
+  },
+
+  stone: {
+    solid: true,
+    placeable: true,
+    faces: { all: [0, 1] },
+  },
+
+  sand: {
+    solid: true,
+    placeable: true,
+    faces: { all: [2, 1] },
+  },
+
+  gravel: {
+    solid: true,
+    placeable: true,
+    faces: { all: [3, 1] },
   },
 
   planks: {
     solid: true,
     placeable: true,
-    faces: {
-      all: [12, 1],
-    },
+    faces: { all: [4, 0] },
   },
 
-  reactor_core: {
-    solid: true,
-    placeable: true,
-    emissive: 0x7a3cff,
-    faces: {
-      all: [7, 4],
-    },
-  },
-
-  gold: {
+  wood: {
     solid: true,
     placeable: true,
     faces: {
-      all: [1, 4],
+      top: [5, 1],
+      bottom: [5, 1],
+      side: [4, 1],
     },
+  },
+
+  leaves: {
+    solid: true,
+    placeable: true,
+    transparent: true,
+    faces: { all: [5, 3] },
+  },
+
+  glass: {
+    solid: true,
+    placeable: true,
+    transparent: true,
+    faces: { all: [1, 3] },
+  },
+
+  bookshelf: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: [4, 0],
+      bottom: [4, 0],
+      side: [3, 2],
+    },
+  },
+
+  bricks: {
+    solid: true,
+    placeable: true,
+    faces: { all: [7, 0] },
+  },
+
+  mossy_cobblestone: {
+    solid: true,
+    placeable: true,
+    faces: { all: [4, 2] },
   },
 
   obsidian: {
     solid: true,
     placeable: true,
+    faces: { all: [5, 2] },
+  },
+
+  gold: {
+    solid: true,
+    placeable: true,
+    faces: { all: [7, 1] },
+  },
+
+  iron: {
+    solid: true,
+    placeable: true,
+    faces: { all: [6, 1] },
+  },
+
+  diamond: {
+    solid: true,
+    placeable: true,
+    faces: { all: [8, 1] },
+  },
+
+  tnt: {
+    solid: true,
+    placeable: true,
     faces: {
-      all: [2, 13],
+      top: [9, 0],
+      bottom: [10, 0],
+      side: [8, 0],
     },
+  },
+
+  wool_white: {
+    solid: true,
+    placeable: true,
+    faces: { all: [0, 4] },
+  },
+
+  wool_red: {
+    solid: true,
+    placeable: true,
+    faces: { all: [1, 4] },
+  },
+
+  wool_yellow: {
+    solid: true,
+    placeable: true,
+    faces: { all: [2, 4] },
+  },
+
+  wool_green: {
+    solid: true,
+    placeable: true,
+    faces: { all: [3, 4] },
+  },
+
+  wool_blue: {
+    solid: true,
+    placeable: true,
+    faces: { all: [4, 4] },
+  },
+
+  reactor_core: {
+    solid: true,
+    placeable: true,
+    emissive: 0x552266,
+    faces: { all: [7, 1] },
   },
 
   glowing_obsidian: {
     solid: true,
     placeable: true,
     emissive: 0xa24dff,
-    faces: {
-      all: [7, 13],
-    },
+    faces: { all: [7, 13] },
   },
 
   netherrack: {
     solid: true,
     placeable: true,
-    faces: {
-      all: [7, 15],
-    },
-  },
-
-  quartz: {
-    solid: true,
-    placeable: true,
-    faces: {
-      all: [4, 13],
-    },
-  },
-
-  pumpkin: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: [9, 6],
-      bottom: [9, 6],
-      side: [8, 6],
-      front: [8, 6],
-    },
+    faces: { all: [7, 15] },
   },
 
   lava: {
     solid: false,
     placeable: true,
     transparent: true,
-    emissive: 0xff7a00,
+    emissive: 0xff6a00,
+    faces: { all: [15, 15] },
+  },
+
+  pumpkin: {
+    solid: true,
+    placeable: true,
     faces: {
-      all: [15, 15],
+      top: [6, 6],
+      bottom: [6, 6],
+      side: [6, 7],
+      front: [6, 7],
     },
   },
 };
 
 const HOTBAR = [
+  "grass",
+  "dirt",
   "cobblestone",
-  "gold",
+  "stone",
+  "planks",
+  "wood",
+  "leaves",
+  "glass",
+  "sand",
+  "gravel",
+  "bookshelf",
+  "bricks",
+  "mossy_cobblestone",
   "obsidian",
+  "gold",
+  "iron",
+  "diamond",
+  "tnt",
+  "wool_white",
+  "wool_red",
+  "wool_yellow",
+  "wool_green",
+  "wool_blue",
   "reactor_core",
   "glowing_obsidian",
   "netherrack",
-  "quartz",
-  "planks",
-  "pumpkin",
   "lava",
+  "pumpkin",
 ];
 
 const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
@@ -179,7 +292,7 @@ startBtn.addEventListener("click", init);
 
 async function init() {
   startBtn.disabled = true;
-  showMessage("Loading textures...");
+  showMessage("Loading MCPE simulator...");
   await setupThree();
   buildHotbar();
   buildWorld();
@@ -189,7 +302,7 @@ async function init() {
   titleScreen.classList.add("hidden");
   hud.classList.remove("hidden");
   app.running = true;
-  showMessage("Build a Nether Reactor and press Activate.");
+  showMessage("Creative mode ready.");
   animate();
 }
 
@@ -204,8 +317,8 @@ async function setupThree() {
   app.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   app.scene = new THREE.Scene();
-  app.scene.background = new THREE.Color(0x8cc7ff);
-  app.scene.fog = new THREE.Fog(0x8cc7ff, 20, 48);
+  app.scene.background = new THREE.Color(0x87c6ff);
+  app.scene.fog = new THREE.Fog(0x87c6ff, 24, 60);
 
   app.camera = new THREE.PerspectiveCamera(
     72,
@@ -214,11 +327,11 @@ async function setupThree() {
     100
   );
 
-  const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.02);
   app.scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
-  sun.position.set(1, 2.2, 0.8);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.88);
+  sun.position.set(1.5, 2.5, 1.0);
   app.scene.add(sun);
 
   app.worldGroup = new THREE.Group();
@@ -250,17 +363,22 @@ function buildHotbar() {
     drawTileToCanvas(icon, getFaceTile(blockId, "front"));
 
     slot.appendChild(icon);
+
     slot.addEventListener("click", () => {
       app.selectedBlockId = blockId;
       document.querySelectorAll(".slot").forEach((el) => el.classList.remove("selected"));
       slot.classList.add("selected");
-      showMessage(`Selected: ${blockId.replaceAll("_", " ")}`);
+      showMessage(`Selected: ${prettyName(blockId)}`);
     });
 
     hotbarEl.appendChild(slot);
   });
 
-  showMessage(`Selected: ${app.selectedBlockId.replaceAll("_", " ")}`);
+  showMessage(`Selected: ${prettyName(app.selectedBlockId)}`);
+}
+
+function prettyName(id) {
+  return id.replaceAll("_", " ");
 }
 
 function drawTileToCanvas(canvasEl, [tx, ty]) {
@@ -284,8 +402,17 @@ function drawTileToCanvas(canvasEl, [tx, ty]) {
 function getFaceTile(blockId, face) {
   const def = BLOCKS[blockId];
   if (!def || !def.faces) return [0, 0];
-
   return def.faces[face] || def.faces.side || def.faces.all || [0, 0];
+}
+
+function faceToBlockFace(face) {
+  if (face === "top") return "top";
+  if (face === "bottom") return "bottom";
+  if (face === "front") return "front";
+  if (face === "back") return "back";
+  if (face === "left") return "left";
+  if (face === "right") return "right";
+  return "side";
 }
 
 function buildWorld() {
@@ -293,25 +420,56 @@ function buildWorld() {
     for (let z = 0; z < WORLD_D; z++) {
       setBlock(x, 0, z, "grass");
 
-      if (
-        (x === 0 || z === 0 || x === WORLD_W - 1 || z === WORLD_D - 1) &&
-        Math.random() < 0.2
-      ) {
-        setBlock(x, 1, z, "cobblestone");
+      if (x === 0 || z === 0 || x === WORLD_W - 1 || z === WORLD_D - 1) {
+        if (Math.random() < 0.35) setBlock(x, 1, z, "stone");
       }
     }
   }
 
-  const x = 8;
-  const y = 1;
-  const z = 8;
+  for (let x = 4; x <= 6; x++) {
+    for (let z = 4; z <= 6; z++) {
+      setBlock(x, 1, z, "sand");
+    }
+  }
 
+  for (let x = 15; x <= 18; x++) {
+    for (let z = 5; z <= 8; z++) {
+      setBlock(x, 1, z, "cobblestone");
+    }
+  }
+
+  buildTree(6, 1, 14);
+  buildTree(17, 1, 16);
+
+  const x = 12;
+  const y = 1;
+  const z = 12;
   setBlock(x, y, z, "reactor_core");
   setBlock(x - 1, y, z, "gold");
   setBlock(x + 1, y, z, "gold");
   setBlock(x, y, z - 1, "gold");
   setBlock(x, y, z + 1, "gold");
   setBlock(x, y + 1, z, "cobblestone");
+}
+
+function buildTree(x, y, z) {
+  setBlock(x, y + 1, z, "wood");
+  setBlock(x, y + 2, z, "wood");
+  setBlock(x, y + 3, z, "wood");
+
+  const leafPositions = [
+    [x, y + 4, z],
+    [x - 1, y + 3, z],
+    [x + 1, y + 3, z],
+    [x, y + 3, z - 1],
+    [x, y + 3, z + 1],
+    [x - 1, y + 4, z],
+    [x + 1, y + 4, z],
+    [x, y + 4, z - 1],
+    [x, y + 4, z + 1],
+  ];
+
+  leafPositions.forEach(([bx, by, bz]) => setBlock(bx, by, bz, "leaves"));
 }
 
 function buildHighlight() {
@@ -394,18 +552,9 @@ function makeFaceMaterials(blockId) {
       map: tex,
       transparent: !!def.transparent,
       emissive: new THREE.Color(def.emissive || 0x000000),
+      alphaTest: def.transparent ? 0.15 : 0,
     });
   });
-}
-
-function faceToBlockFace(face) {
-  if (face === "top") return "top";
-  if (face === "bottom") return "bottom";
-  if (face === "front") return "front";
-  if (face === "back") return "back";
-  if (face === "left") return "left";
-  if (face === "right") return "right";
-  return "side";
 }
 
 function makeTileTexture(tileX, tileY) {
@@ -611,7 +760,6 @@ function raycastBlocks() {
 
 function updateHighlight() {
   const hit = raycastBlocks();
-
   if (!hit) {
     app.highlight.visible = false;
     return;
@@ -627,7 +775,6 @@ function breakTargetBlock() {
 
   const { x, y, z, blockId } = hit.object.userData;
   if (blockId === "air") return;
-
   setBlock(x, y, z, "air");
 }
 
@@ -636,9 +783,7 @@ function placeSelectedBlock() {
   if (!hit) return;
 
   const normal = hit.face.normal.clone();
-  normal
-    .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
-    .round();
+  normal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).round();
 
   const base = hit.object.userData;
   const x = base.x + normal.x;
@@ -651,7 +796,6 @@ function placeSelectedBlock() {
   const dx = Math.abs(app.playerPos.x - center.x);
   const dy = Math.abs(app.playerPos.y - center.y);
   const dz = Math.abs(app.playerPos.z - center.z);
-
   if (dx < 0.8 && dy < 1.5 && dz < 0.8) return;
 
   setBlock(x, y, z, app.selectedBlockId);
@@ -659,14 +803,12 @@ function placeSelectedBlock() {
 
 function tryActivateReactor() {
   const hit = raycastBlocks();
-
   if (!hit) {
     showMessage("Look at a reactor core first.");
     return;
   }
 
   const { x, y, z, blockId } = hit.object.userData;
-
   if (blockId !== "reactor_core") {
     showMessage("That is not a reactor core.");
     return;
@@ -685,7 +827,7 @@ function tryActivateReactor() {
     getBlock(x, y + 1, z) !== "air";
 
   if (!ok) {
-    showMessage("Structure invalid. Surround core with gold and cap it.");
+    showMessage("Structure invalid.");
     return;
   }
 
@@ -695,61 +837,26 @@ function tryActivateReactor() {
   pulseBlock(x, y, z, 8, 120);
 
   const ring = [
-    [x - 2, y, z],
-    [x + 2, y, z],
-    [x, y, z - 2],
-    [x, y, z + 2],
-    [x - 1, y, z - 1],
-    [x + 1, y, z - 1],
-    [x - 1, y, z + 1],
-    [x + 1, y, z + 1],
-    [x - 2, y, z - 1],
-    [x + 2, y, z - 1],
-    [x - 2, y, z + 1],
-    [x + 2, y, z + 1],
-    [x - 1, y, z - 2],
-    [x + 1, y, z - 2],
-    [x - 1, y, z + 2],
-    [x + 1, y, z + 2],
+    [x - 2, y, z], [x + 2, y, z], [x, y, z - 2], [x, y, z + 2],
+    [x - 1, y, z - 1], [x + 1, y, z - 1], [x - 1, y, z + 1], [x + 1, y, z + 1],
+    [x - 2, y, z - 1], [x + 2, y, z - 1], [x - 2, y, z + 1], [x + 2, y, z + 1],
+    [x - 1, y, z - 2], [x + 1, y, z - 2], [x - 1, y, z + 2], [x + 1, y, z + 2],
   ];
 
   ring.forEach((pos, i) => {
     const timer = setTimeout(() => {
       const [bx, by, bz] = pos;
-
       if (getBlock(bx, by, bz) === "air") {
         setBlock(bx, by, bz, i % 2 === 0 ? "glowing_obsidian" : "netherrack");
-      } else if (getBlock(bx, by + 1, bz) === "air") {
-        setBlock(bx, by + 1, bz, i % 3 === 0 ? "pumpkin" : "glowing_obsidian");
       }
-    }, i * 140);
-
-    app.reactorTimers.push(timer);
-  });
-
-  const crown = [
-    [x, y + 1, z],
-    [x - 1, y + 1, z],
-    [x + 1, y + 1, z],
-    [x, y + 1, z - 1],
-    [x, y + 1, z + 1],
-    [x, y + 2, z],
-  ];
-
-  crown.forEach((pos, i) => {
-    const timer = setTimeout(() => {
-      const [bx, by, bz] = pos;
-      setBlock(bx, by, bz, i === 0 ? "glowing_obsidian" : "obsidian");
-    }, 900 + i * 130);
-
+    }, i * 120);
     app.reactorTimers.push(timer);
   });
 
   const finishTimer = setTimeout(() => {
     app.reactorActive = false;
     showMessage("Reactor pulse complete.");
-  }, 4200);
-
+  }, 3200);
   app.reactorTimers.push(finishTimer);
 }
 
@@ -763,7 +870,6 @@ function pulseBlock(x, y, z, count, interval) {
   const id = setInterval(() => {
     n++;
     mesh.scale.setScalar(n % 2 === 0 ? 1 : 1.18);
-
     if (n >= count) {
       clearInterval(id);
       mesh.scale.copy(base);
@@ -776,7 +882,6 @@ function pulseBlock(x, y, z, count, interval) {
 function showMessage(text) {
   messageEl.textContent = text;
   messageEl.classList.add("show");
-
   clearTimeout(showMessage._timer);
   showMessage._timer = setTimeout(() => {
     messageEl.classList.remove("show");
@@ -785,7 +890,6 @@ function showMessage(text) {
 
 function onResize() {
   if (!app.renderer || !app.camera) return;
-
   app.camera.aspect = window.innerWidth / window.innerHeight;
   app.camera.updateProjectionMatrix();
   app.renderer.setSize(window.innerWidth, window.innerHeight);
