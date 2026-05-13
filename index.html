@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   />
-  <title>mcpe demo</title>
+  <title>MCPE Simulator</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -16,18 +16,15 @@
     <div id="titleScreen" class="overlay">
       <img id="logo" src="assets/logo.png" alt="Minecraft Pocket Edition logo" />
       <div class="title-panel">
-        <h1>0.1.01 alpha</h1>
-        <p>Creative mode • tablet controls • 3D</p>
+        <h1>MCPE Simulator</h1>
+        <p>Creative mode • tablet controls • reactor support</p>
         <button id="startBtn" type="button">Start</button>
       </div>
     </div>
 
     <div id="hud" class="hidden">
       <div id="topBar">
-        <div id="hotbarWrap">
-          <div id="hotbar"></div>
-          <button id="inventoryBtn" type="button">Inventory</button>
-        </div>
+        <div id="hotbar"></div>
       </div>
 
       <div id="crosshair">+</div>
@@ -50,17 +47,7 @@
       </div>
 
       <div id="lookPad">
-        <div class="lookLabel">LOOK</div>
-      </div>
-    </div>
-
-    <div id="inventoryOverlay" class="hidden">
-      <div id="inventoryPanel">
-        <div class="inventoryHeader">
-          <h2>Inventory</h2>
-          <button id="closeInventoryBtn" type="button">Done</button>
-        </div>
-        <div id="inventoryGrid"></div>
+        <div class="look-label">LOOK</div>
       </div>
     </div>
   </div>
