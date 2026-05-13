@@ -35,6 +35,10 @@ body {
   height: 100%;
 }
 
+#app {
+  position: relative;
+}
+
 #game {
   display: block;
   image-rendering: pixelated;
@@ -48,7 +52,6 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  z-index: 20;
 }
 
 .overlay {
@@ -57,12 +60,13 @@ body {
   background:
     radial-gradient(circle at center, rgba(60, 0, 80, 0.18), rgba(0, 0, 0, 0.78)),
     linear-gradient(to bottom, #203040, #0b0b0b);
+  z-index: 30;
 }
 
 #inventoryOverlay {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.52);
   backdrop-filter: blur(3px);
-  z-index: 25;
+  z-index: 50;
 }
 
 #logo {
@@ -169,6 +173,7 @@ body {
   color: #081108;
   font-weight: 700;
   font-size: 1rem;
+  pointer-events: auto;
 }
 
 .hidden {
@@ -214,6 +219,7 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 #crosshair {
@@ -306,6 +312,7 @@ body {
   font-size: 22px;
   font-weight: 700;
   backdrop-filter: blur(2px);
+  pointer-events: auto;
 }
 
 .ctrl:active,
