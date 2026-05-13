@@ -1,17 +1,16 @@
 import * as THREE from "https://unpkg.com/three@0.160.1/build/three.module.js";
 
 const TILE = 16;
-const ATLAS_COLS = 16;
-const WORLD_W = 16;
-const WORLD_H = 8;
-const WORLD_D = 16;
+const WORLD_W = 18;
+const WORLD_H = 10;
+const WORLD_D = 18;
 const REACH = 8;
 const PLAYER_HEIGHT = 1.7;
 const EYE_HEIGHT = 1.55;
 const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
-const LOOK_SENSITIVITY = 0.0032;
+const LOOK_SENSITIVITY = 0.004;
 
 const app = {
   scene: null,
@@ -23,107 +22,50 @@ const app = {
   blocks: new Map(),
   selectedBlockId: "cobblestone",
   running: false,
-  yaw: 0,
-  pitch: -0.35,
+  yaw: Math.PI,
+  pitch: -0.2,
   velocity: new THREE.Vector3(),
-  playerPos: new THREE.Vector3(8, 3.5, 12),
+  playerPos: new THREE.Vector3(9, 3.2, 14),
   onGround: false,
-  touchMoveState: {
-    forward: false,
-    back: false,
-    left: false,
-    right: false,
-  },
-  touchLookState: {
-    active: false,
-    x: 0,
-    y: 0,
-  },
+  touchMoveState: { forward: false, back: false, left: false, right: false },
+  touchLookState: { active: false, pointerId: null, x: 0, y: 0 },
   reactorActive: false,
   reactorTimers: [],
   highlight: null,
   raycaster: new THREE.Raycaster(),
-  pointerNdc: new THREE.Vector2(0, 0),
+  inventoryOpen: false,
 };
 
 const BLOCKS = {
-  air: {
-    solid: false,
-    placeable: false,
-  },
-  grass: {
-    tile: [0, 0],
-    solid: true,
-    placeable: true,
-  },
-  cobblestone: {
-    tile: [1, 0],
-    solid: true,
-    placeable: true,
-  },
-  planks: {
-    tile: [4, 0],
-    solid: true,
-    placeable: true,
-  },
-  reactor_core: {
-    tile: [7, 1],
-    solid: true,
-    placeable: true,
-    emissive: 0x552266,
-  },
-  gold: {
-    tile: [6, 13],
-    solid: true,
-    placeable: true,
-  },
-  obsidian: {
-    tile: [15, 14],
-    solid: true,
-    placeable: true,
-  },
+  air: { solid: false, placeable: false },
+  grass: { faces: { all: [0, 0] }, solid: true, placeable: true, label: "Grass" },
+  cobblestone: { faces: { all: [1, 0] }, solid: true, placeable: true, label: "Cobblestone" },
+  planks: { faces: { all: [4, 0] }, solid: true, placeable: true, label: "Planks" },
+  reactor_core: { faces: { all: [7, 1] }, solid: true, placeable: true, emissive: 0x552266, label: "Reactor Core" },
+  gold: { faces: { all: [6, 13] }, solid: true, placeable: true, label: "Gold Block" },
+  obsidian: { faces: { all: [15, 14] }, solid: true, placeable: true, label: "Obsidian" },
   glowing_obsidian: {
-    tile: [13, 13],
+    faces: { all: [14, 13] },
     solid: true,
     placeable: true,
-    emissive: 0x8b3dff,
+    emissive: 0xaa66ff,
+    label: "Glowing Obsidian",
   },
-  netherrack: {
-    tile: [1, 15],
-    solid: true,
-    placeable: true,
-  },
-  quartz: {
-    tile: [0, 14],
-    solid: true,
-    placeable: true,
-  },
-  pumpkin: {
-    tile: [6, 7],
-    solid: true,
-    placeable: true,
-  },
+  netherrack: { faces: { all: [1, 15] }, solid: true, placeable: true, label: "Netherrack" },
+  quartz: { faces: { all: [0, 14] }, solid: true, placeable: true, label: "Quartz" },
+  pumpkin: { faces: { all: [6, 7] }, solid: true, placeable: true, label: "Pumpkin" },
   lava: {
-    tile: [15, 15],
+    faces: { all: [15, 15] },
     solid: false,
     placeable: true,
     transparent: true,
     emissive: 0xff6600,
+    label: "Lava",
   },
 };
 
-const HOTBAR = [
-  "cobblestone",
-  "gold",
-  "obsidian",
-  "reactor_core",
-  "glowing_obsidian",
-  "netherrack",
-  "quartz",
-  "planks",
-  "pumpkin",
-  "lava",
-];
+const HOTBAR_SIZE = 8;
+const INVENTORY_BLOCKS = Object.keys(BLOCKS).filter((id) => BLOCKS[id].placeable);
 
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
@@ -136,6 +78,21 @@ const placeBtn = document.getElementById("placeBtn");
 const breakBtn = document.getElementById("breakBtn");
 const jumpBtn = document.getElementById("jumpBtn");
 const lookPad = document.getElementById("lookPad");
+const inventoryBtn = document.getElementById("inventoryBtn");
+const inventoryOverlay = document.getElementById("inventoryOverlay");
+const inventoryGrid = document.getElementById("inventoryGrid");
+const closeInventoryBtn = document.getElementById("closeInventoryBtn");
+
+const hotbarState = [
+  "cobblestone",
+  "gold",
+  "obsidian",
+  "reactor_core",
+  "glowing_obsidian",
+  "netherrack",
+  "quartz",
+  "planks",
+];
 
 startBtn.addEventListener("click", init);
 
@@ -143,6 +100,7 @@ async function init() {
   startBtn.disabled = true;
   showMessage("Loading textures...");
   await setupThree();
+  buildInventory();
   buildHotbar();
   buildWorld();
   buildHighlight();
@@ -151,7 +109,7 @@ async function init() {
   titleScreen.classList.add("hidden");
   hud.classList.remove("hidden");
   app.running = true;
-  showMessage("Build a Nether Reactor and press Activate.");
+  showMessage("Look on the right pad. Inventory added.");
   animate();
 }
 
@@ -163,21 +121,15 @@ async function setupThree() {
   });
   app.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   app.renderer.setSize(window.innerWidth, window.innerHeight);
-  app.renderer.shadowMap.enabled = false;
   app.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   app.scene = new THREE.Scene();
   app.scene.background = new THREE.Color(0x8cc7ff);
   app.scene.fog = new THREE.Fog(0x8cc7ff, 20, 48);
 
-  app.camera = new THREE.PerspectiveCamera(
-    72,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
+  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 1.05);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.08);
   app.scene.add(ambient);
 
   const sun = new THREE.DirectionalLight(0xffffff, 0.85);
@@ -196,31 +148,68 @@ async function setupThree() {
   window.addEventListener("resize", onResize);
 }
 
-function buildHotbar() {
-  hotbarEl.innerHTML = "";
+function buildInventory() {
+  inventoryGrid.innerHTML = "";
 
-  HOTBAR.forEach((blockId, index) => {
-    const slot = document.createElement("button");
-    slot.className = "slot" + (blockId === app.selectedBlockId ? " selected" : "");
-    slot.dataset.block = blockId;
+  INVENTORY_BLOCKS.forEach((blockId) => {
+    const item = document.createElement("button");
+    item.className = "inventoryItem" + (blockId === app.selectedBlockId ? " selected" : "");
+    item.dataset.block = blockId;
 
     const icon = document.createElement("canvas");
     icon.width = 16;
     icon.height = 16;
-    drawTileToCanvas(icon, BLOCKS[blockId].tile);
+    drawTileToCanvas(icon, getBlockFaceTile(blockId, "front"));
 
+    const label = document.createElement("div");
+    label.textContent = BLOCKS[blockId].label || blockId;
+
+    item.append(icon, label);
+    item.addEventListener("click", () => {
+      app.selectedBlockId = blockId;
+      hotbarState[0] = blockId;
+      syncSelections();
+      buildHotbar();
+      showMessage(`Selected: ${BLOCKS[blockId].label}`);
+    });
+
+    inventoryGrid.appendChild(item);
+  });
+}
+
+function buildHotbar() {
+  hotbarEl.innerHTML = "";
+  for (let i = 0; i < HOTBAR_SIZE; i++) {
+    const blockId = hotbarState[i];
+    const slot = document.createElement("button");
+    slot.className = "slot" + (blockId === app.selectedBlockId ? " selected" : "");
+    slot.dataset.index = String(i);
+
+    const icon = document.createElement("canvas");
+    icon.width = 16;
+    icon.height = 16;
+    drawTileToCanvas(icon, getBlockFaceTile(blockId, "front"));
     slot.appendChild(icon);
+
     slot.addEventListener("click", () => {
       app.selectedBlockId = blockId;
-      document.querySelectorAll(".slot").forEach((el) => el.classList.remove("selected"));
-      slot.classList.add("selected");
-      showMessage(`Selected: ${blockId.replaceAll("_", " ")}`);
+      syncSelections();
+      showMessage(`Selected: ${BLOCKS[blockId].label}`);
     });
 
     hotbarEl.appendChild(slot);
+  }
+}
+
+function syncSelections() {
+  document.querySelectorAll(".slot").forEach((el) => {
+    const i = Number(el.dataset.index);
+    el.classList.toggle("selected", hotbarState[i] === app.selectedBlockId);
   });
 
-  showMessage(`Selected: ${app.selectedBlockId.replaceAll("_", " ")}`);
+  document.querySelectorAll(".inventoryItem").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.block === app.selectedBlockId);
+  });
 }
 
 function drawTileToCanvas(canvasEl, [tx, ty]) {
@@ -228,41 +217,25 @@ function drawTileToCanvas(canvasEl, [tx, ty]) {
   const img = app.atlas.image;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-  ctx.drawImage(
-    img,
-    tx * TILE,
-    ty * TILE,
-    TILE,
-    TILE,
-    0,
-    0,
-    canvasEl.width,
-    canvasEl.height
-  );
+  ctx.drawImage(img, tx * TILE, ty * TILE, TILE, TILE, 0, 0, canvasEl.width, canvasEl.height);
 }
 
 function buildWorld() {
   for (let x = 0; x < WORLD_W; x++) {
     for (let z = 0; z < WORLD_D; z++) {
       setBlock(x, 0, z, "grass");
-      if ((x === 0 || z === 0 || x === WORLD_W - 1 || z === WORLD_D - 1) && Math.random() < 0.2) {
-        setBlock(x, 1, z, "cobblestone");
-      }
     }
   }
 
-  const reactorX = 8;
-  const reactorY = 1;
-  const reactorZ = 8;
-
-  setBlock(reactorX, reactorY, reactorZ, "reactor_core");
-  setBlock(reactorX - 1, reactorY, reactorZ, "gold");
-  setBlock(reactorX + 1, reactorY, reactorZ, "gold");
-  setBlock(reactorX, reactorY, reactorZ - 1, "gold");
-  setBlock(reactorX, reactorY, reactorZ + 1, "gold");
-
-  setBlock(reactorX, reactorY + 1, reactorZ, "cobblestone");
-  setBlock(reactorX, reactorY - 0 + 0, reactorZ, "reactor_core"); // keep core
+  const x = 8;
+  const y = 1;
+  const z = 8;
+  setBlock(x, y, z, "reactor_core");
+  setBlock(x - 1, y, z, "gold");
+  setBlock(x + 1, y, z, "gold");
+  setBlock(x, y, z - 1, "gold");
+  setBlock(x, y, z + 1, "gold");
+  setBlock(x, y + 1, z, "cobblestone");
 }
 
 function buildHighlight() {
@@ -278,6 +251,24 @@ function buildHighlight() {
   app.scene.add(app.highlight);
 }
 
+function key(x, y, z) {
+  return `${x},${y},${z}`;
+}
+
+function getBlock(x, y, z) {
+  return app.blocks.get(key(x, y, z)) || "air";
+}
+
+function getBlockFaceTile(blockId, face) {
+  const def = BLOCKS[blockId];
+  if (!def || !def.faces) return [0, 0];
+  return def.faces[face] || def.faces.all || def.faces.side || [0, 0];
+}
+
+function faceOrderName(index) {
+  return ["right", "left", "top", "bottom", "front", "back"][index];
+}
+
 function tileUv(tileX, tileY) {
   const texW = app.atlas.image.width;
   const texH = app.atlas.image.height;
@@ -288,47 +279,38 @@ function tileUv(tileX, tileY) {
   return { u0, v0, u1, v1 };
 }
 
+function buildFaceTexture(tile) {
+  const tex = app.atlas.clone();
+  tex.needsUpdate = true;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const { u0, v0, u1, v1 } = tileUv(tile[0], tile[1]);
+  tex.repeat.set(u1 - u0, v1 - v0);
+  tex.offset.set(u0, v0);
+  return tex;
+}
+
 function makeBlockMaterial(blockId) {
   const def = BLOCKS[blockId];
   const mats = [];
-  const faces = [0, 1, 2, 3, 4, 5];
-
-  faces.forEach(() => {
-    const tex = app.atlas.clone();
-    tex.needsUpdate = true;
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-    tex.colorSpace = THREE.SRGBColorSpace;
-
-    const { u0, v0, u1, v1 } = tileUv(def.tile[0], def.tile[1]);
-    tex.repeat.set(u1 - u0, v1 - v0);
-    tex.offset.set(u0, v0);
-
+  for (let i = 0; i < 6; i++) {
+    const face = faceOrderName(i);
+    const tile = getBlockFaceTile(blockId, face);
     mats.push(
       new THREE.MeshLambertMaterial({
-        map: tex,
+        map: buildFaceTexture(tile),
         transparent: !!def.transparent,
         emissive: new THREE.Color(def.emissive || 0x000000),
       })
     );
-  });
-
+  }
   return mats;
 }
 
-function key(x, y, z) {
-  return `${x},${y},${z}`;
-}
-
-function getBlock(x, y, z) {
-  return app.blocks.get(key(x, y, z)) || "air";
-}
-
 function setBlock(x, y, z, blockId) {
-  if (
-    x < 0 || z < 0 || y < 0 ||
-    x >= WORLD_W || z >= WORLD_D || y >= WORLD_H
-  ) return;
+  if (x < 0 || z < 0 || y < 0 || x >= WORLD_W || z >= WORLD_D || y >= WORLD_H) return;
 
   const k = key(x, y, z);
   const prev = app.blocks.get(k) || "air";
@@ -364,27 +346,27 @@ function setBlock(x, y, z, blockId) {
 function bindControls() {
   document.querySelectorAll(".move").forEach((btn) => {
     const act = btn.dataset.act;
-
     const down = (e) => {
       e.preventDefault();
+      btn.setPointerCapture?.(e.pointerId);
       app.touchMoveState[act] = true;
       btn.classList.add("active");
     };
-
     const up = (e) => {
       e.preventDefault();
       app.touchMoveState[act] = false;
       btn.classList.remove("active");
+      try { btn.releasePointerCapture?.(e.pointerId); } catch {}
     };
-
     btn.addEventListener("pointerdown", down);
     btn.addEventListener("pointerup", up);
     btn.addEventListener("pointercancel", up);
-    btn.addEventListener("pointerleave", up);
+    btn.addEventListener("lostpointercapture", up);
   });
 
   jumpBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    if (app.inventoryOpen) return;
     if (app.onGround) {
       app.velocity.y = JUMP_SPEED;
       app.onGround = false;
@@ -393,51 +375,67 @@ function bindControls() {
 
   placeBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    placeSelectedBlock();
+    if (!app.inventoryOpen) placeSelectedBlock();
   });
 
   breakBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    breakTargetBlock();
+    if (!app.inventoryOpen) breakTargetBlock();
   });
 
   activateBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    tryActivateReactor();
+    if (!app.inventoryOpen) tryActivateReactor();
   });
 
-  lookPad.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    app.touchLookState.active = true;
-    app.touchLookState.x = e.clientX;
-    app.touchLookState.y = e.clientY;
+  lookPad.addEventListener("pointerdown", startLook);
+  lookPad.addEventListener("pointermove", moveLook);
+  lookPad.addEventListener("pointerup", endLook);
+  lookPad.addEventListener("pointercancel", endLook);
+  lookPad.addEventListener("lostpointercapture", endLook);
+
+  inventoryBtn.addEventListener("click", () => setInventoryOpen(true));
+  closeInventoryBtn.addEventListener("click", () => setInventoryOpen(false));
+  inventoryOverlay.addEventListener("click", (e) => {
+    if (e.target === inventoryOverlay) setInventoryOpen(false);
   });
+}
 
-  lookPad.addEventListener("pointermove", (e) => {
-    if (!app.touchLookState.active) return;
-    e.preventDefault();
-    const dx = e.clientX - app.touchLookState.x;
-    const dy = e.clientY - app.touchLookState.y;
-    app.touchLookState.x = e.clientX;
-    app.touchLookState.y = e.clientY;
+function startLook(e) {
+  e.preventDefault();
+  if (app.inventoryOpen) return;
+  app.touchLookState.active = true;
+  app.touchLookState.pointerId = e.pointerId;
+  app.touchLookState.x = e.clientX;
+  app.touchLookState.y = e.clientY;
+  lookPad.setPointerCapture?.(e.pointerId);
+}
 
-    app.yaw -= dx * LOOK_SENSITIVITY;
-    app.pitch -= dy * LOOK_SENSITIVITY;
-    app.pitch = Math.max(-1.45, Math.min(1.45, app.pitch));
-  });
+function moveLook(e) {
+  if (!app.touchLookState.active || e.pointerId !== app.touchLookState.pointerId) return;
+  e.preventDefault();
 
-  const stopLook = (e) => {
-    e.preventDefault();
-    app.touchLookState.active = false;
-  };
+  const dx = e.clientX - app.touchLookState.x;
+  const dy = e.clientY - app.touchLookState.y;
+  app.touchLookState.x = e.clientX;
+  app.touchLookState.y = e.clientY;
 
-  lookPad.addEventListener("pointerup", stopLook);
-  lookPad.addEventListener("pointercancel", stopLook);
-  lookPad.addEventListener("pointerleave", stopLook);
+  app.yaw -= dx * LOOK_SENSITIVITY;
+  app.pitch -= dy * LOOK_SENSITIVITY;
+  app.pitch = Math.max(-1.45, Math.min(1.45, app.pitch));
+}
 
-  canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-  });
+function endLook(e) {
+  if (e.pointerId !== app.touchLookState.pointerId) return;
+  app.touchLookState.active = false;
+  app.touchLookState.pointerId = null;
+  try { lookPad.releasePointerCapture?.(e.pointerId); } catch {}
+}
+
+function setInventoryOpen(open) {
+  app.inventoryOpen = open;
+  inventoryOverlay.classList.toggle("hidden", !open);
+  showMessage(open ? "Inventory open" : "Inventory closed");
 }
 
 function updateCamera() {
@@ -452,7 +450,6 @@ function updateCamera() {
     Math.sin(app.pitch),
     Math.cos(app.yaw) * Math.cos(app.pitch)
   );
-
   app.camera.lookAt(app.camera.position.clone().add(dir));
 }
 
@@ -486,31 +483,26 @@ function playerCollides(pos) {
 }
 
 function movePlayer(dt) {
-  const input = new THREE.Vector3();
+  if (app.inventoryOpen) return;
 
+  const input = new THREE.Vector3();
   if (app.touchMoveState.forward) input.add(getForwardVector());
   if (app.touchMoveState.back) input.sub(getForwardVector());
   if (app.touchMoveState.right) input.add(getRightVector());
   if (app.touchMoveState.left) input.sub(getRightVector());
 
-  if (input.lengthSq() > 0) {
-    input.normalize().multiplyScalar(MOVE_SPEED * dt);
-  }
+  if (input.lengthSq() > 0) input.normalize().multiplyScalar(MOVE_SPEED * dt);
 
   app.velocity.y -= GRAVITY * dt;
 
   const next = app.playerPos.clone();
 
   next.x += input.x;
-  if (!playerCollides(next)) {
-    app.playerPos.x = next.x;
-  }
+  if (!playerCollides(next)) app.playerPos.x = next.x;
 
   next.copy(app.playerPos);
   next.z += input.z;
-  if (!playerCollides(next)) {
-    app.playerPos.z = next.z;
-  }
+  if (!playerCollides(next)) app.playerPos.z = next.z;
 
   next.copy(app.playerPos);
   next.y += app.velocity.y * dt;
@@ -524,8 +516,8 @@ function movePlayer(dt) {
 
   if (app.playerPos.y < 2.4) {
     app.playerPos.y = 2.4;
-    app.onGround = true;
     app.velocity.y = 0;
+    app.onGround = true;
   }
 }
 
@@ -540,12 +532,15 @@ function getLookDirection() {
 function raycastBlocks() {
   app.raycaster.set(app.camera.position, getLookDirection());
   app.raycaster.far = REACH;
-  const meshes = [...app.blockMeshes.values()];
-  const hits = app.raycaster.intersectObjects(meshes, false);
-  return hits[0] || null;
+  return app.raycaster.intersectObjects([...app.blockMeshes.values()], false)[0] || null;
 }
 
 function updateHighlight() {
+  if (app.inventoryOpen) {
+    app.highlight.visible = false;
+    return;
+  }
+
   const hit = raycastBlocks();
   if (!hit) {
     app.highlight.visible = false;
@@ -558,30 +553,41 @@ function updateHighlight() {
 function breakTargetBlock() {
   const hit = raycastBlocks();
   if (!hit) return;
-  const { x, y, z, blockId } = hit.object.userData;
-  if (blockId === "air") return;
+  const { x, y, z } = hit.object.userData;
   setBlock(x, y, z, "air");
+}
+
+function normalToAxisVector(hit) {
+  const n = hit.face.normal.clone();
+  const normalMatrix = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+  n.applyMatrix3(normalMatrix);
+
+  const ax = Math.abs(n.x);
+  const ay = Math.abs(n.y);
+  const az = Math.abs(n.z);
+
+  if (ax > ay && ax > az) return new THREE.Vector3(Math.sign(n.x), 0, 0);
+  if (ay > ax && ay > az) return new THREE.Vector3(0, Math.sign(n.y), 0);
+  return new THREE.Vector3(0, 0, Math.sign(n.z));
 }
 
 function placeSelectedBlock() {
   const hit = raycastBlocks();
   if (!hit) return;
 
-  const normal = hit.face.normal.clone();
-  normal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).round();
-
+  const normal = normalToAxisVector(hit);
   const base = hit.object.userData;
   const x = base.x + normal.x;
   const y = base.y + normal.y;
   const z = base.z + normal.z;
 
   if (getBlock(x, y, z) !== "air") return;
+  if (!BLOCKS[app.selectedBlockId]?.placeable) return;
 
-  const playerTest = app.playerPos.clone();
   const center = new THREE.Vector3(x + 0.5, y + 0.5, z + 0.5);
-  const dx = Math.abs(playerTest.x - center.x);
-  const dy = Math.abs(playerTest.y - center.y);
-  const dz = Math.abs(playerTest.z - center.z);
+  const dx = Math.abs(app.playerPos.x - center.x);
+  const dy = Math.abs(app.playerPos.y - center.y);
+  const dz = Math.abs(app.playerPos.z - center.z);
   if (dx < 0.8 && dy < 1.5 && dz < 0.8) return;
 
   setBlock(x, y, z, app.selectedBlockId);
@@ -634,10 +640,8 @@ function tryActivateReactor() {
       const [bx, by, bz] = pos;
       if (getBlock(bx, by, bz) === "air") {
         setBlock(bx, by, bz, i % 2 === 0 ? "glowing_obsidian" : "netherrack");
-      } else if (getBlock(bx, by + 1, bz) === "air") {
-        setBlock(bx, by + 1, bz, i % 3 === 0 ? "pumpkin" : "glowing_obsidian");
       }
-    }, i * 140);
+    }, i * 130);
     app.reactorTimers.push(timer);
   });
 
@@ -652,28 +656,26 @@ function tryActivateReactor() {
     const timer = setTimeout(() => {
       const [bx, by, bz] = pos;
       setBlock(bx, by, bz, i === 0 ? "glowing_obsidian" : "obsidian");
-    }, 900 + i * 130);
+    }, 850 + i * 120);
     app.reactorTimers.push(timer);
   });
 
   const finishTimer = setTimeout(() => {
     app.reactorActive = false;
     showMessage("Reactor pulse complete.");
-  }, 4200);
+  }, 4000);
   app.reactorTimers.push(finishTimer);
 }
 
 function pulseBlock(x, y, z, count, interval) {
-  const k = key(x, y, z);
-  const mesh = app.blockMeshes.get(k);
+  const mesh = app.blockMeshes.get(key(x, y, z));
   if (!mesh) return;
 
   let n = 0;
   const base = mesh.scale.clone();
   const id = setInterval(() => {
     n++;
-    const s = n % 2 === 0 ? 1.0 : 1.18;
-    mesh.scale.setScalar(s);
+    mesh.scale.setScalar(n % 2 === 0 ? 1 : 1.18);
     if (n >= count) {
       clearInterval(id);
       mesh.scale.copy(base);
@@ -709,6 +711,5 @@ function animate(time = 0) {
   movePlayer(dt);
   updateCamera();
   updateHighlight();
-
   app.renderer.render(app.scene, app.camera);
 }
