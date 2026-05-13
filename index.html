@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   />
-  <title>Nether Reactor Simulator</title>
+  <title>mcpe demo</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -16,15 +16,28 @@
     <div id="titleScreen" class="overlay">
       <img id="logo" src="assets/logo.png" alt="Minecraft Pocket Edition logo" />
       <div class="title-panel">
-        <h1>Nether Reactor Simulator</h1>
+        <h4>0.1.0 demo</h4>
         <p>Creative mode • tablet controls • 3D</p>
         <button id="startBtn">Start</button>
       </div>
     </div>
 
+    <div id="inventoryOverlay" class="hidden">
+      <div id="inventoryPanel">
+        <div class="inventoryHeader">
+          <h2>Inventory</h2>
+          <button id="closeInventoryBtn">Done</button>
+        </div>
+        <div id="inventoryGrid"></div>
+      </div>
+    </div>
+
     <div id="hud" class="hidden">
       <div id="topBar">
-        <div id="hotbar"></div>
+        <div id="hotbarWrap">
+          <div id="hotbar"></div>
+          <button id="inventoryBtn">Inventory</button>
+        </div>
       </div>
 
       <div id="crosshair">+</div>
@@ -47,7 +60,7 @@
       </div>
 
       <div id="lookPad">
-        <div class="look-label">LOOK</div>
+        <div class="lookLabel">LOOK</div>
       </div>
     </div>
   </div>
