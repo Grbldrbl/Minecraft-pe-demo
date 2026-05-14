@@ -1,15 +1,13 @@
 :root {
-  --ui-bg: rgba(20, 20, 20, 0.45);
-  --ui-bg-strong: rgba(20, 20, 20, 0.72);
+  --ui-bg: rgba(20, 20, 20, 0.5);
   --ui-border: rgba(255, 255, 255, 0.16);
-  --ui-text: #ffffff;
+  --ui-text: #fff;
 }
 
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  touch-action: none;
 }
 
 html,
@@ -28,19 +26,18 @@ body {
   inset: 0;
 }
 
-#app,
-#game {
+#app {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-#app {
-  position: relative;
-}
-
 #game {
   display: block;
+  width: 100%;
+  height: 100%;
   image-rendering: pixelated;
+  touch-action: none;
 }
 
 .overlay {
@@ -64,7 +61,7 @@ body {
 }
 
 .title-panel {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   border: 1px solid var(--ui-border);
   border-radius: 16px;
   padding: 18px 20px;
@@ -109,8 +106,6 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: min(96vw, 960px);
-  display: flex;
-  justify-content: center;
   pointer-events: none;
 }
 
@@ -122,19 +117,26 @@ body {
   background: var(--ui-bg);
   border: 1px solid var(--ui-border);
   pointer-events: auto;
-  max-width: min(96vw, 960px);
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
   white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
 #hotbar::-webkit-scrollbar {
   height: 6px;
 }
 
+#hotbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 #hotbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 999px;
 }
 
@@ -149,6 +151,7 @@ body {
   place-items: center;
   overflow: hidden;
   padding: 0;
+  touch-action: manipulation;
 }
 
 .slot.selected {
@@ -160,6 +163,7 @@ body {
   width: 40px;
   height: 40px;
   image-rendering: pixelated;
+  pointer-events: none;
 }
 
 #crosshair {
@@ -183,7 +187,7 @@ body {
   text-align: center;
   padding: 10px 14px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   border: 1px solid var(--ui-border);
   opacity: 0;
   transition: opacity 180ms ease;
@@ -232,6 +236,7 @@ body {
   border: 1px dashed rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.03);
   pointer-events: auto;
+  touch-action: none;
 }
 
 .look-label {
@@ -252,7 +257,7 @@ body {
   min-height: 62px;
   font-size: 22px;
   font-weight: 700;
-  backdrop-filter: blur(2px);
+  touch-action: manipulation;
 }
 
 .ctrl:active,
@@ -277,14 +282,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  #topBar {
-    width: min(98vw, 98vw);
-  }
-
-  #hotbar {
-    max-width: 98vw;
-  }
-
   .slot {
     width: 46px;
     height: 46px;
