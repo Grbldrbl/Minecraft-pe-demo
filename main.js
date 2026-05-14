@@ -1,9 +1,9 @@
 import * as THREE from "https://unpkg.com/three@0.160.1/build/three.module.js";
 
 const TILE = 16;
-const WORLD_W = 24;
-const WORLD_H = 12;
-const WORLD_D = 24;
+const WORLD_W = 28;
+const WORLD_H = 16;
+const WORLD_D = 28;
 const REACH = 8;
 const PLAYER_HEIGHT = 1.7;
 const EYE_HEIGHT = 1.55;
@@ -12,8 +12,6 @@ const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
 const LOOK_SENSITIVITY = 0.0032;
 
-// Safer atlas picks based on the classic terrain sheet layout.
-// These are intentionally conservative.
 const TILES = {
   grass_top: [0, 0],
   stone: [1, 0],
@@ -21,15 +19,13 @@ const TILES = {
   grass_side: [3, 0],
   planks: [4, 0],
   cobblestone: [0, 1],
-  bedrock: [1, 1],
   sand: [2, 1],
   gravel: [3, 1],
   wood_side: [4, 1],
   wood_top: [5, 1],
-  gold: [7, 1],
   iron: [6, 1],
+  gold: [7, 1],
   diamond: [8, 1],
-  bricks: [7, 0],
   bookshelf: [3, 2],
   mossy: [4, 2],
   obsidian: [5, 2],
@@ -42,21 +38,72 @@ const TILES = {
   wool_blue: [4, 4],
   pumpkin_top: [6, 6],
   pumpkin_side: [6, 7],
-  tnt_side: [8, 0],
-  tnt_top: [9, 0],
-  tnt_bottom: [10, 0],
   reactor_core: [7, 4],
   glowing_obsidian: [7, 13],
   netherrack: [7, 15],
   lava: [15, 15],
 };
 
+const ITEM_TILES = {
+  gold_ingot: [2, 2],
+  iron_ingot: [1, 2],
+  diamond: [7, 1],
+  apple: [10, 0],
+  mushroom_red: [11, 0],
+  mushroom_brown: [12, 0],
+  sugar: [2, 0],
+  feather: [0, 0],
+  gunpowder: [7, 0],
+  glow_dust: [3, 0],
+};
+
+const BLOCKS = {
+  air: { solid: false, placeable: false },
+  grass: { solid: true, placeable: true, faces: { top: TILES.grass_top, bottom: TILES.dirt, side: TILES.grass_side } },
+  dirt: { solid: true, placeable: true, faces: { all: TILES.dirt } },
+  stone: { solid: true, placeable: true, faces: { all: TILES.stone } },
+  cobblestone: { solid: true, placeable: true, faces: { all: TILES.cobblestone } },
+  sand: { solid: true, placeable: true, faces: { all: TILES.sand } },
+  gravel: { solid: true, placeable: true, faces: { all: TILES.gravel } },
+  planks: { solid: true, placeable: true, faces: { all: TILES.planks } },
+  wood: { solid: true, placeable: true, faces: { top: TILES.wood_top, bottom: TILES.wood_top, side: TILES.wood_side } },
+  leaves: { solid: true, placeable: true, transparent: true, faces: { all: TILES.leaves } },
+  glass: { solid: true, placeable: true, transparent: true, faces: { all: TILES.glass } },
+  bookshelf: { solid: true, placeable: true, faces: { top: TILES.planks, bottom: TILES.planks, side: TILES.bookshelf } },
+  mossy_cobblestone: { solid: true, placeable: true, faces: { all: TILES.mossy } },
+  obsidian: { solid: true, placeable: true, faces: { all: TILES.obsidian } },
+  gold: { solid: true, placeable: true, faces: { all: TILES.gold } },
+  iron: { solid: true, placeable: true, faces: { all: TILES.iron } },
+  diamond: { solid: true, placeable: true, faces: { all: TILES.diamond } },
+  wool_white: { solid: true, placeable: true, faces: { all: TILES.wool_white } },
+  wool_red: { solid: true, placeable: true, faces: { all: TILES.wool_red } },
+  wool_yellow: { solid: true, placeable: true, faces: { all: TILES.wool_yellow } },
+  wool_green: { solid: true, placeable: true, faces: { all: TILES.wool_green } },
+  wool_blue: { solid: true, placeable: true, faces: { all: TILES.wool_blue } },
+  pumpkin: { solid: true, placeable: true, faces: { top: TILES.pumpkin_top, bottom: TILES.pumpkin_top, side: TILES.pumpkin_side, front: TILES.pumpkin_side } },
+  reactor_core: { solid: true, placeable: true, emissive: 0x5a2a88, faces: { all: TILES.reactor_core } },
+  glowing_obsidian: { solid: true, placeable: true, emissive: 0xa24dff, faces: { all: TILES.glowing_obsidian } },
+  netherrack: { solid: true, placeable: true, faces: { all: TILES.netherrack } },
+  lava: { solid: false, placeable: true, transparent: true, emissive: 0xff6a00, faces: { all: TILES.lava } },
+};
+
+const HOTBAR = [
+  "grass","dirt","stone","cobblestone","sand","gravel","planks","wood","leaves","glass",
+  "bookshelf","mossy_cobblestone","obsidian","gold","iron","diamond",
+  "wool_white","wool_red","wool_yellow","wool_green","wool_blue",
+  "pumpkin","reactor_core","glowing_obsidian","netherrack","lava"
+];
+
+const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
+
 const app = {
   scene: null,
   camera: null,
   renderer: null,
   atlas: null,
+  itemAtlas: null,
   worldGroup: null,
+  itemGroup: null,
   blockMeshes: new Map(),
   blocks: new Map(),
   selectedBlockId: "cobblestone",
@@ -64,259 +111,16 @@ const app = {
   yaw: 0,
   pitch: -0.35,
   velocity: new THREE.Vector3(),
-  playerPos: new THREE.Vector3(12, 4, 18),
+  playerPos: new THREE.Vector3(14, 4, 22),
   onGround: false,
-  touchMoveState: {
-    forward: false,
-    back: false,
-    left: false,
-    right: false,
-  },
-  touchLookState: {
-    active: false,
-    x: 0,
-    y: 0,
-  },
+  touchMoveState: { forward: false, back: false, left: false, right: false },
+  touchLookState: { active: false, x: 0, y: 0 },
   reactorActive: false,
   reactorTimers: [],
   highlight: null,
   raycaster: new THREE.Raycaster(),
+  itemEntities: [],
 };
-
-const BLOCKS = {
-  air: {
-    solid: false,
-    placeable: false,
-  },
-
-  grass: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: TILES.grass_top,
-      bottom: TILES.dirt,
-      side: TILES.grass_side,
-    },
-  },
-
-  dirt: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.dirt },
-  },
-
-  stone: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.stone },
-  },
-
-  cobblestone: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.cobblestone },
-  },
-
-  sand: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.sand },
-  },
-
-  gravel: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.gravel },
-  },
-
-  planks: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.planks },
-  },
-
-  wood: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: TILES.wood_top,
-      bottom: TILES.wood_top,
-      side: TILES.wood_side,
-    },
-  },
-
-  leaves: {
-    solid: true,
-    placeable: true,
-    transparent: true,
-    faces: { all: TILES.leaves },
-  },
-
-  glass: {
-    solid: true,
-    placeable: true,
-    transparent: true,
-    faces: { all: TILES.glass },
-  },
-
-  bricks: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.bricks },
-  },
-
-  bookshelf: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: TILES.planks,
-      bottom: TILES.planks,
-      side: TILES.bookshelf,
-    },
-  },
-
-  mossy_cobblestone: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.mossy },
-  },
-
-  obsidian: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.obsidian },
-  },
-
-  gold: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.gold },
-  },
-
-  iron: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.iron },
-  },
-
-  diamond: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.diamond },
-  },
-
-  tnt: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: TILES.tnt_top,
-      bottom: TILES.tnt_bottom,
-      side: TILES.tnt_side,
-    },
-  },
-
-  wool_white: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.wool_white },
-  },
-
-  wool_red: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.wool_red },
-  },
-
-  wool_yellow: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.wool_yellow },
-  },
-
-  wool_green: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.wool_green },
-  },
-
-  wool_blue: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.wool_blue },
-  },
-
-  pumpkin: {
-    solid: true,
-    placeable: true,
-    faces: {
-      top: TILES.pumpkin_top,
-      bottom: TILES.pumpkin_top,
-      side: TILES.pumpkin_side,
-      front: TILES.pumpkin_side,
-    },
-  },
-
-  reactor_core: {
-    solid: true,
-    placeable: true,
-    emissive: 0x5a2a88,
-    faces: { all: TILES.reactor_core },
-  },
-
-  glowing_obsidian: {
-    solid: true,
-    placeable: true,
-    emissive: 0xa24dff,
-    faces: { all: TILES.glowing_obsidian },
-  },
-
-  netherrack: {
-    solid: true,
-    placeable: true,
-    faces: { all: TILES.netherrack },
-  },
-
-  lava: {
-    solid: false,
-    placeable: true,
-    transparent: true,
-    emissive: 0xff6a00,
-    faces: { all: TILES.lava },
-  },
-};
-
-const HOTBAR = [
-  "grass",
-  "dirt",
-  "stone",
-  "cobblestone",
-  "sand",
-  "gravel",
-  "planks",
-  "wood",
-  "leaves",
-  "glass",
-  "bricks",
-  "bookshelf",
-  "mossy_cobblestone",
-  "obsidian",
-  "gold",
-  "iron",
-  "diamond",
-  "tnt",
-  "wool_white",
-  "wool_red",
-  "wool_yellow",
-  "wool_green",
-  "wool_blue",
-  "pumpkin",
-  "reactor_core",
-  "glowing_obsidian",
-  "netherrack",
-  "lava",
-];
-
-const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
 
 const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
@@ -334,7 +138,7 @@ startBtn.addEventListener("click", init);
 
 async function init() {
   startBtn.disabled = true;
-  showMessage("Loading MCPE simulator...");
+  showMessage("Loading...");
   await setupThree();
   buildHotbar();
   buildWorld();
@@ -349,28 +153,18 @@ async function init() {
 }
 
 async function setupThree() {
-  app.renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: false,
-    alpha: false,
-  });
+  app.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
   app.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   app.renderer.setSize(window.innerWidth, window.innerHeight);
   app.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   app.scene = new THREE.Scene();
   app.scene.background = new THREE.Color(0x87c6ff);
-  app.scene.fog = new THREE.Fog(0x87c6ff, 24, 60);
+  app.scene.fog = new THREE.Fog(0x87c6ff, 18, 60);
 
-  app.camera = new THREE.PerspectiveCamera(
-    72,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
+  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 1.02);
-  app.scene.add(ambient);
+  app.scene.add(new THREE.AmbientLight(0xffffff, 1.02));
 
   const sun = new THREE.DirectionalLight(0xffffff, 0.88);
   sun.position.set(1.5, 2.5, 1.0);
@@ -378,6 +172,9 @@ async function setupThree() {
 
   app.worldGroup = new THREE.Group();
   app.scene.add(app.worldGroup);
+
+  app.itemGroup = new THREE.Group();
+  app.scene.add(app.itemGroup);
 
   const loader = new THREE.TextureLoader();
   app.atlas = await loader.loadAsync("assets/terrain.png");
@@ -387,6 +184,14 @@ async function setupThree() {
   app.atlas.colorSpace = THREE.SRGBColorSpace;
   app.atlas.wrapS = THREE.ClampToEdgeWrapping;
   app.atlas.wrapT = THREE.ClampToEdgeWrapping;
+
+  app.itemAtlas = await loader.loadAsync("assets/items.png");
+  app.itemAtlas.magFilter = THREE.NearestFilter;
+  app.itemAtlas.minFilter = THREE.NearestFilter;
+  app.itemAtlas.generateMipmaps = false;
+  app.itemAtlas.colorSpace = THREE.SRGBColorSpace;
+  app.itemAtlas.wrapS = THREE.ClampToEdgeWrapping;
+  app.itemAtlas.wrapT = THREE.ClampToEdgeWrapping;
 
   window.addEventListener("resize", onResize);
 }
@@ -398,15 +203,13 @@ function buildHotbar() {
     const slot = document.createElement("button");
     slot.className = "slot" + (blockId === app.selectedBlockId ? " selected" : "");
     slot.type = "button";
-    slot.dataset.block = blockId;
 
     const icon = document.createElement("canvas");
     icon.width = 16;
     icon.height = 16;
-    drawTileToCanvas(icon, getIconTile(blockId));
+    drawTileToCanvas(icon, getIconTile(blockId), app.atlas.image);
 
     slot.appendChild(icon);
-
     slot.addEventListener("click", () => {
       app.selectedBlockId = blockId;
       document.querySelectorAll(".slot").forEach((el) => el.classList.remove("selected"));
@@ -416,8 +219,6 @@ function buildHotbar() {
 
     hotbarEl.appendChild(slot);
   });
-
-  showMessage(`Selected: ${prettyName(app.selectedBlockId)}`);
 }
 
 function getIconTile(blockId) {
@@ -430,27 +231,16 @@ function prettyName(id) {
   return id.replaceAll("_", " ");
 }
 
-function drawTileToCanvas(canvasEl, [tx, ty]) {
+function drawTileToCanvas(canvasEl, [tx, ty], image) {
   const ctx = canvasEl.getContext("2d");
-  const img = app.atlas.image;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-  ctx.drawImage(
-    img,
-    tx * TILE,
-    ty * TILE,
-    TILE,
-    TILE,
-    0,
-    0,
-    canvasEl.width,
-    canvasEl.height
-  );
+  ctx.drawImage(image, tx * TILE, ty * TILE, TILE, TILE, 0, 0, canvasEl.width, canvasEl.height);
 }
 
 function getFaceTile(blockId, face) {
   const def = BLOCKS[blockId];
-  if (!def || !def.faces) return [0, 0];
+  if (!def?.faces) return [0, 0];
   return def.faces[face] || def.faces.side || def.faces.all || [0, 0];
 }
 
@@ -468,37 +258,37 @@ function buildWorld() {
   for (let x = 0; x < WORLD_W; x++) {
     for (let z = 0; z < WORLD_D; z++) {
       setBlock(x, 0, z, "grass");
-
-      if (x === 0 || z === 0 || x === WORLD_W - 1 || z === WORLD_D - 1) {
-        if (Math.random() < 0.35) setBlock(x, 1, z, "stone");
-      }
     }
   }
 
-  for (let x = 4; x <= 6; x++) {
-    for (let z = 4; z <= 6; z++) {
-      setBlock(x, 1, z, "sand");
-    }
-  }
+  buildTree(6, 1, 6);
+  buildTree(20, 1, 8);
 
-  for (let x = 15; x <= 18; x++) {
-    for (let z = 5; z <= 8; z++) {
-      setBlock(x, 1, z, "cobblestone");
-    }
-  }
+  const x = 14;
+  const y = 2;
+  const z = 14;
 
-  buildTree(6, 1, 14);
-  buildTree(17, 1, 16);
+  setBlock(x - 1, y - 1, z - 1, "gold");
+  setBlock(x,     y - 1, z - 1, "cobblestone");
+  setBlock(x + 1, y - 1, z - 1, "gold");
+  setBlock(x - 1, y - 1, z,     "cobblestone");
+  setBlock(x,     y - 1, z,     "cobblestone");
+  setBlock(x + 1, y - 1, z,     "cobblestone");
+  setBlock(x - 1, y - 1, z + 1, "gold");
+  setBlock(x,     y - 1, z + 1, "cobblestone");
+  setBlock(x + 1, y - 1, z + 1, "gold");
 
-  const x = 12;
-  const y = 1;
-  const z = 12;
+  setBlock(x - 1, y, z - 1, "cobblestone");
+  setBlock(x + 1, y, z - 1, "cobblestone");
   setBlock(x, y, z, "reactor_core");
-  setBlock(x - 1, y, z, "gold");
-  setBlock(x + 1, y, z, "gold");
-  setBlock(x, y, z - 1, "gold");
-  setBlock(x, y, z + 1, "gold");
-  setBlock(x, y + 1, z, "cobblestone");
+  setBlock(x - 1, y, z + 1, "cobblestone");
+  setBlock(x + 1, y, z + 1, "cobblestone");
+
+  setBlock(x,     y + 1, z - 1, "cobblestone");
+  setBlock(x - 1, y + 1, z,     "cobblestone");
+  setBlock(x,     y + 1, z,     "cobblestone");
+  setBlock(x + 1, y + 1, z,     "cobblestone");
+  setBlock(x,     y + 1, z + 1, "cobblestone");
 }
 
 function buildTree(x, y, z) {
@@ -506,7 +296,7 @@ function buildTree(x, y, z) {
   setBlock(x, y + 2, z, "wood");
   setBlock(x, y + 3, z, "wood");
 
-  const leafPositions = [
+  const leaves = [
     [x, y + 4, z],
     [x - 1, y + 3, z],
     [x + 1, y + 3, z],
@@ -518,17 +308,12 @@ function buildTree(x, y, z) {
     [x, y + 4, z + 1],
   ];
 
-  leafPositions.forEach(([bx, by, bz]) => setBlock(bx, by, bz, "leaves"));
+  leaves.forEach(([bx, by, bz]) => setBlock(bx, by, bz, "leaves"));
 }
 
 function buildHighlight() {
   const geo = new THREE.BoxGeometry(1.02, 1.02, 1.02);
-  const mat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.45,
-  });
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.45 });
   app.highlight = new THREE.Mesh(geo, mat);
   app.highlight.visible = false;
   app.scene.add(app.highlight);
@@ -543,9 +328,7 @@ function getBlock(x, y, z) {
 }
 
 function setBlock(x, y, z, blockId) {
-  if (x < 0 || z < 0 || y < 0 || x >= WORLD_W || z >= WORLD_D || y >= WORLD_H) {
-    return;
-  }
+  if (x < 0 || y < 0 || z < 0 || x >= WORLD_W || y >= WORLD_H || z >= WORLD_D) return;
 
   const k = key(x, y, z);
   const prev = app.blocks.get(k) || "air";
@@ -570,33 +353,26 @@ function setBlock(x, y, z, blockId) {
   const mesh = new THREE.Mesh(geo, mats);
   mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
   mesh.userData = { x, y, z, blockId };
-
   app.worldGroup.add(mesh);
   app.blockMeshes.set(k, mesh);
 }
 
 function disposeMesh(mesh) {
   mesh.geometry?.dispose?.();
-
   if (Array.isArray(mesh.material)) {
     mesh.material.forEach((m) => {
       m.map?.dispose?.();
       m.dispose?.();
     });
-  } else {
-    mesh.material?.map?.dispose?.();
-    mesh.material?.dispose?.();
   }
 }
 
 function makeFaceMaterials(blockId) {
   const def = BLOCKS[blockId];
-
   return FACE_ORDER.map((faceName) => {
     const blockFace = faceToBlockFace(faceName);
     const tile = getFaceTile(blockId, blockFace);
-    const tex = makeTileTexture(tile[0], tile[1]);
-
+    const tex = makeTileTexture(tile[0], tile[1], app.atlas);
     return new THREE.MeshLambertMaterial({
       map: tex,
       transparent: !!def.transparent,
@@ -606,8 +382,8 @@ function makeFaceMaterials(blockId) {
   });
 }
 
-function makeTileTexture(tileX, tileY) {
-  const tex = app.atlas.clone();
+function makeTileTexture(tileX, tileY, atlasTexture) {
+  const tex = atlasTexture.clone();
   tex.needsUpdate = true;
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;
@@ -616,10 +392,9 @@ function makeTileTexture(tileX, tileY) {
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
 
-  const img = app.atlas.image;
+  const img = atlasTexture.image;
   const texW = img.width;
   const texH = img.height;
-
   const inset = 0.01;
   const u0 = (tileX * TILE + inset) / texW;
   const vTop = (tileY * TILE + inset) / texH;
@@ -628,7 +403,6 @@ function makeTileTexture(tileX, tileY) {
 
   tex.repeat.set(u1 - u0, vBottom - vTop);
   tex.offset.set(u0, 1 - vBottom);
-
   return tex;
 }
 
@@ -687,12 +461,10 @@ function bindControls() {
   lookPad.addEventListener("pointermove", (e) => {
     if (!app.touchLookState.active) return;
     e.preventDefault();
-
     const dx = e.clientX - app.touchLookState.x;
     const dy = e.clientY - app.touchLookState.y;
     app.touchLookState.x = e.clientX;
     app.touchLookState.y = e.clientY;
-
     app.yaw -= dx * LOOK_SENSITIVITY;
     app.pitch -= dy * LOOK_SENSITIVITY;
     app.pitch = Math.max(-1.45, Math.min(1.45, app.pitch));
@@ -706,8 +478,6 @@ function bindControls() {
   lookPad.addEventListener("pointerup", stopLook);
   lookPad.addEventListener("pointercancel", stopLook);
   lookPad.addEventListener("pointerleave", stopLook);
-
-  canvas.addEventListener("pointerdown", (e) => e.preventDefault());
 }
 
 function updateCamera() {
@@ -716,7 +486,6 @@ function updateCamera() {
     app.playerPos.y + (EYE_HEIGHT - PLAYER_HEIGHT / 2),
     app.playerPos.z
   );
-
   const dir = getLookDirection();
   app.camera.lookAt(app.camera.position.clone().add(dir));
 }
@@ -755,7 +524,6 @@ function playerCollides(pos) {
       }
     }
   }
-
   return false;
 }
 
@@ -767,9 +535,7 @@ function movePlayer(dt) {
   if (app.touchMoveState.right) input.add(getRightVector());
   if (app.touchMoveState.left) input.sub(getRightVector());
 
-  if (input.lengthSq() > 0) {
-    input.normalize().multiplyScalar(MOVE_SPEED * dt);
-  }
+  if (input.lengthSq() > 0) input.normalize().multiplyScalar(MOVE_SPEED * dt);
 
   app.velocity.y -= GRAVITY * dt;
 
@@ -802,9 +568,7 @@ function movePlayer(dt) {
 function raycastBlocks() {
   app.raycaster.set(app.camera.position, getLookDirection());
   app.raycaster.far = REACH;
-  const meshes = [...app.blockMeshes.values()];
-  const hits = app.raycaster.intersectObjects(meshes, false);
-  return hits[0] || null;
+  return app.raycaster.intersectObjects([...app.blockMeshes.values()], false)[0] || null;
 }
 
 function updateHighlight() {
@@ -813,7 +577,6 @@ function updateHighlight() {
     app.highlight.visible = false;
     return;
   }
-
   app.highlight.visible = true;
   app.highlight.position.copy(hit.object.position);
 }
@@ -821,9 +584,7 @@ function updateHighlight() {
 function breakTargetBlock() {
   const hit = raycastBlocks();
   if (!hit) return;
-
-  const { x, y, z, blockId } = hit.object.userData;
-  if (blockId === "air") return;
+  const { x, y, z } = hit.object.userData;
   setBlock(x, y, z, "air");
 }
 
@@ -868,45 +629,208 @@ function tryActivateReactor() {
     return;
   }
 
-  const ok =
-    getBlock(x - 1, y, z) === "gold" &&
-    getBlock(x + 1, y, z) === "gold" &&
-    getBlock(x, y, z - 1) === "gold" &&
-    getBlock(x, y, z + 1) === "gold" &&
-    getBlock(x, y + 1, z) !== "air";
+  const checks = [
+    [x - 1, y - 1, z - 1, "gold"],
+    [x,     y - 1, z - 1, "cobblestone"],
+    [x + 1, y - 1, z - 1, "gold"],
+    [x - 1, y - 1, z,     "cobblestone"],
+    [x,     y - 1, z,     "cobblestone"],
+    [x + 1, y - 1, z,     "cobblestone"],
+    [x - 1, y - 1, z + 1, "gold"],
+    [x,     y - 1, z + 1, "cobblestone"],
+    [x + 1, y - 1, z + 1, "gold"],
 
-  if (!ok) {
-    showMessage("Structure invalid.");
-    return;
+    [x - 1, y, z - 1, "cobblestone"],
+    [x + 1, y, z - 1, "cobblestone"],
+    [x - 1, y, z + 1, "cobblestone"],
+    [x + 1, y, z + 1, "cobblestone"],
+
+    [x,     y + 1, z - 1, "cobblestone"],
+    [x - 1, y + 1, z,     "cobblestone"],
+    [x,     y + 1, z,     "cobblestone"],
+    [x + 1, y + 1, z,     "cobblestone"],
+    [x,     y + 1, z + 1, "cobblestone"],
+  ];
+
+  for (const [cx, cy, cz, expected] of checks) {
+    if (getBlock(cx, cy, cz) !== expected) {
+      showMessage("Classic reactor structure invalid.");
+      return;
+    }
+  }
+
+  const airChecks = [
+    [x,     y, z - 1],
+    [x - 1, y, z],
+    [x + 1, y, z],
+    [x,     y, z + 1],
+    [x - 1, y + 1, z - 1],
+    [x + 1, y + 1, z - 1],
+    [x - 1, y + 1, z + 1],
+    [x + 1, y + 1, z + 1],
+  ];
+
+  for (const [cx, cy, cz] of airChecks) {
+    if (getBlock(cx, cy, cz) !== "air") {
+      showMessage("Classic reactor structure invalid.");
+      return;
+    }
   }
 
   app.reactorActive = true;
   showMessage("Nether Reactor activated!");
 
   pulseBlock(x, y, z, 8, 120);
+  clearItemEntities();
 
-  const ring = [
-    [x - 2, y, z], [x + 2, y, z], [x, y, z - 2], [x, y, z + 2],
-    [x - 1, y, z - 1], [x + 1, y, z - 1], [x - 1, y, z + 1], [x + 1, y, z + 1],
-    [x - 2, y, z - 1], [x + 2, y, z - 1], [x - 2, y, z + 1], [x + 2, y, z + 1],
-    [x - 1, y, z - 2], [x + 1, y, z - 2], [x - 1, y, z + 2], [x + 1, y, z + 2],
-  ];
-
-  ring.forEach((pos, i) => {
+  const buildSteps = buildReactorRoomSteps(x, y, z);
+  buildSteps.forEach((step, i) => {
     const timer = setTimeout(() => {
-      const [bx, by, bz] = pos;
-      if (getBlock(bx, by, bz) === "air") {
-        setBlock(bx, by, bz, i % 2 === 0 ? "glowing_obsidian" : "netherrack");
-      }
-    }, i * 120);
+      step();
+    }, i * 35);
     app.reactorTimers.push(timer);
   });
 
+  const itemTimer = setTimeout(() => {
+    spawnReactorLoot(x, y, z);
+  }, 1200);
+  app.reactorTimers.push(itemTimer);
+
   const finishTimer = setTimeout(() => {
     app.reactorActive = false;
-    showMessage("Reactor pulse complete.");
-  }, 3200);
+    showMessage("Reactor room formed.");
+  }, 2600);
   app.reactorTimers.push(finishTimer);
+}
+
+function buildReactorRoomSteps(cx, cy, cz) {
+  const steps = [];
+  const half = 4;
+  const floorY = cy - 1;
+  const roomTop = cy + 3;
+
+  for (let x = cx - half; x <= cx + half; x++) {
+    for (let z = cz - half; z <= cz + half; z++) {
+      steps.push(() => {
+        if (x === cx && z === cz) return;
+        setBlock(x, floorY, z, (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0 ? "glowing_obsidian" : "netherrack");
+      });
+    }
+  }
+
+  for (let y = floorY + 1; y <= roomTop; y++) {
+    for (let x = cx - half; x <= cx + half; x++) {
+      for (let z = cz - half; z <= cz + half; z++) {
+        const isWall = x === cx - half || x === cx + half || z === cz - half || z === cz + half;
+        if (!isWall) {
+          steps.push(() => {
+            if (!(x === cx && y === cy && z === cz)) setBlock(x, y, z, "air");
+          });
+        } else {
+          steps.push(() => {
+            if (y === floorY + 1 && z === cz - half && x === cx) {
+              setBlock(x, y, z, "air");
+              return;
+            }
+            if (y === floorY + 2 && z === cz - half && x === cx) {
+              setBlock(x, y, z, "air");
+              return;
+            }
+            setBlock(x, y, z, (x + y + z) % 3 === 0 ? "glowing_obsidian" : "netherrack");
+          });
+        }
+      }
+    }
+  }
+
+  for (let x = cx - half; x <= cx + half; x++) {
+    for (let z = cz - half; z <= cz + half; z++) {
+      steps.push(() => {
+        if (x === cx && z === cz) {
+          setBlock(x, roomTop, z, "glowing_obsidian");
+        } else {
+          setBlock(x, roomTop, z, (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0 ? "netherrack" : "glowing_obsidian");
+        }
+      });
+    }
+  }
+
+  for (let x = cx - 2; x <= cx + 2; x++) {
+    for (let z = cz - 2; z <= cz + 2; z++) {
+      if (x === cx && z === cz) continue;
+      steps.push(() => {
+        if (getBlock(x, cy, z) === "air") {
+          setBlock(x, cy, z, (x + z) % 2 === 0 ? "netherrack" : "air");
+        }
+      });
+    }
+  }
+
+  return steps;
+}
+
+function spawnReactorLoot(cx, cy, cz) {
+  const loot = [
+    "gold_ingot",
+    "iron_ingot",
+    "diamond",
+    "apple",
+    "mushroom_red",
+    "mushroom_brown",
+    "sugar",
+    "feather",
+    "gunpowder",
+    "glow_dust",
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    const id = loot[i % loot.length];
+    const px = cx + (Math.random() * 5 - 2.5);
+    const py = cy + 0.9 + Math.random() * 1.2;
+    const pz = cz + (Math.random() * 5 - 2.5);
+    spawnItemEntity(id, px, py, pz);
+  }
+}
+
+function spawnItemEntity(itemId, x, y, z) {
+  const tile = ITEM_TILES[itemId];
+  if (!tile || !app.itemAtlas) return;
+
+  const tex = makeTileTexture(tile[0], tile[1], app.itemAtlas);
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.1,
+  });
+
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.set(x, y, z);
+  sprite.scale.set(0.6, 0.6, 0.6);
+  app.itemGroup.add(sprite);
+
+  app.itemEntities.push({
+    sprite,
+    baseY: y,
+    phase: Math.random() * Math.PI * 2,
+    spin: (Math.random() * 2 - 1) * 0.02,
+  });
+}
+
+function clearItemEntities() {
+  app.itemEntities.forEach(({ sprite }) => {
+    app.itemGroup.remove(sprite);
+    sprite.material.map?.dispose?.();
+    sprite.material.dispose?.();
+  });
+  app.itemEntities = [];
+}
+
+function updateItemEntities(timeSeconds) {
+  app.itemEntities.forEach((entity, i) => {
+    entity.sprite.position.y = entity.baseY + Math.sin(timeSeconds * 2 + entity.phase) * 0.12;
+    entity.sprite.material.rotation += entity.spin;
+    entity.sprite.scale.setScalar(0.6 + Math.sin(timeSeconds * 2.5 + i) * 0.03);
+  });
 }
 
 function pulseBlock(x, y, z, count, interval) {
@@ -945,7 +869,6 @@ function onResize() {
 }
 
 let lastTime = 0;
-
 function animate(time = 0) {
   if (!app.running) return;
   requestAnimationFrame(animate);
@@ -956,5 +879,6 @@ function animate(time = 0) {
   movePlayer(dt);
   updateCamera();
   updateHighlight();
+  updateItemEntities(time / 1000);
   app.renderer.render(app.scene, app.camera);
-    }
+}
