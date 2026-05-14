@@ -10,8 +10,7 @@ const EYE_HEIGHT = 1.55;
 const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
-const LOOK_SENSITIVITY = 0.0032;
-const TILES = {
+const LOOK_SENSITIVITY = 0.const TILES = {
   grass_top: [0, 0],
   stone: [1, 0],
   dirt: [2, 0],
@@ -32,17 +31,17 @@ const TILES = {
   leaves: [5, 3],
 
   wool_white: [0, 4],
-  wool_red: [0, 5],
-  wool_yellow: [1, 5],
-  wool_green: [2, 5],
-  wool_blue: [3, 5],
+  wool_red: [0, 12],
+  wool_yellow: [1, 12],
+  wool_green: [2, 12],
+  wool_blue: [3, 12],
 
   pumpkin_top: [6, 7],
   pumpkin_side: [7, 7],
 
-  reactor_core: [10, 10],
-  glowing_obsidian: [9, 11],
-  netherrack: [13, 15],
+  reactor_core: [10, 11],
+  glowing_obsidian: [11, 11],
+  netherrack: [14, 14],
   lava: [15, 15],
 
   sign_plank: [4, 0],
