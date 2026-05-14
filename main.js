@@ -39,9 +39,9 @@ const TILES = {
   wool_blue: [4, 4],
   pumpkin_top: [6, 6],
   pumpkin_side: [7, 6],
-  reactor_core: [9, 6],
-  glowing_obsidian: [11, 6],
-  netherrack: [14, 14],
+  reactor_core: [8, 6],
+  glowing_obsidian: [10, 6],
+  netherrack: [13, 14],
   lava: [15, 15],
   sign_plank: [4, 0],
 };
