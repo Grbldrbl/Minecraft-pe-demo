@@ -31,17 +31,21 @@ const TILES = {
   obsidian: [5, 2],
   glass: [1, 3],
   leaves: [5, 3],
+
   wool_white: [0, 4],
-  wool_red: [1, 4],
-  wool_yellow: [2, 4],
-  wool_green: [3, 4],
-  wool_blue: [4, 4],
-  pumpkin_top: [6, 6],
-  pumpkin_side: [7, 6],
-  reactor_core: [10, 11],
-  glowing_obsidian: [11, 11],
-  netherrack: [14, 14],
+  wool_red: [0, 4],
+  wool_yellow: [0, 4],
+  wool_green: [0, 4],
+  wool_blue: [0, 4],
+
+  pumpkin_top: [2, 0],
+  pumpkin_side: [2, 0],
+
+  reactor_core: [5, 2],
+  glowing_obsidian: [5, 2],
+  netherrack: [2, 0],
   lava: [15, 15],
+
   sign_plank: [4, 0],
 };
 
