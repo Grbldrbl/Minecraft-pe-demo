@@ -11,7 +11,6 @@ const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
 const LOOK_SENSITIVITY = 0.0032;
-
 const TILES = {
   grass_top: [0, 0],
   stone: [1, 0],
@@ -19,7 +18,6 @@ const TILES = {
   grass_side: [3, 0],
   planks: [4, 0],
   cobblestone: [0, 1],
-  bedrock: [1, 1],
   sand: [2, 1],
   gravel: [3, 1],
   wood_side: [4, 1],
@@ -39,10 +37,12 @@ const TILES = {
   wool_blue: [4, 4],
   pumpkin_top: [6, 6],
   pumpkin_side: [7, 6],
-  reactor_core: [8, 6],
-  glowing_obsidian: [10, 6],
-  netherrack: [13, 14],
+
+  reactor_core: [9, 10],
+  glowing_obsidian: [8, 11],
+  netherrack: [12, 15],
   lava: [15, 15],
+
   sign_plank: [4, 0],
 };
 
