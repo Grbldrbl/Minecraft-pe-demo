@@ -19,6 +19,7 @@ const TILES = {
   grass_side: [3, 0],
   planks: [4, 0],
   cobblestone: [0, 1],
+  bedrock: [1, 1],
   sand: [2, 1],
   gravel: [3, 1],
   wood_side: [4, 1],
@@ -37,11 +38,11 @@ const TILES = {
   wool_green: [3, 4],
   wool_blue: [4, 4],
   pumpkin_top: [6, 6],
-  pumpkin_side: [6, 7],
-  reactor_core: [7, 4],
-  glowing_obsidian: [7, 13],
-  netherrack: [7, 15],
-  lava: [15, 15],
+  pumpkin_side: [7, 6],
+  reactor_core: [10, 6],
+  glowing_obsidian: [12, 6],
+  netherrack: [14, 15],
+  lava: [13, 15],
   sign_plank: [4, 0],
 };
 
@@ -60,17 +61,58 @@ const ITEM_TILES = {
 
 const BLOCKS = {
   air: { solid: false, placeable: false },
-  grass: { solid: true, placeable: true, faces: { top: TILES.grass_top, bottom: TILES.dirt, side: TILES.grass_side } },
+
+  grass: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: TILES.grass_top,
+      bottom: TILES.dirt,
+      side: TILES.grass_side,
+    },
+  },
+
   dirt: { solid: true, placeable: true, faces: { all: TILES.dirt } },
   stone: { solid: true, placeable: true, faces: { all: TILES.stone } },
   cobblestone: { solid: true, placeable: true, faces: { all: TILES.cobblestone } },
   sand: { solid: true, placeable: true, faces: { all: TILES.sand } },
   gravel: { solid: true, placeable: true, faces: { all: TILES.gravel } },
   planks: { solid: true, placeable: true, faces: { all: TILES.planks } },
-  wood: { solid: true, placeable: true, faces: { top: TILES.wood_top, bottom: TILES.wood_top, side: TILES.wood_side } },
-  leaves: { solid: true, placeable: true, transparent: true, faces: { all: TILES.leaves } },
-  glass: { solid: true, placeable: true, transparent: true, faces: { all: TILES.glass } },
-  bookshelf: { solid: true, placeable: true, faces: { top: TILES.planks, bottom: TILES.planks, side: TILES.bookshelf } },
+
+  wood: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: TILES.wood_top,
+      bottom: TILES.wood_top,
+      side: TILES.wood_side,
+    },
+  },
+
+  leaves: {
+    solid: true,
+    placeable: true,
+    transparent: true,
+    faces: { all: TILES.leaves },
+  },
+
+  glass: {
+    solid: true,
+    placeable: true,
+    transparent: true,
+    faces: { all: TILES.glass },
+  },
+
+  bookshelf: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: TILES.planks,
+      bottom: TILES.planks,
+      side: TILES.bookshelf,
+    },
+  },
+
   mossy_cobblestone: { solid: true, placeable: true, faces: { all: TILES.mossy } },
   obsidian: { solid: true, placeable: true, faces: { all: TILES.obsidian } },
   gold: { solid: true, placeable: true, faces: { all: TILES.gold } },
@@ -81,19 +123,82 @@ const BLOCKS = {
   wool_yellow: { solid: true, placeable: true, faces: { all: TILES.wool_yellow } },
   wool_green: { solid: true, placeable: true, faces: { all: TILES.wool_green } },
   wool_blue: { solid: true, placeable: true, faces: { all: TILES.wool_blue } },
-  pumpkin: { solid: true, placeable: true, faces: { top: TILES.pumpkin_top, bottom: TILES.pumpkin_top, side: TILES.pumpkin_side, front: TILES.pumpkin_side } },
-  reactor_core: { solid: true, placeable: true, emissive: 0x5a2a88, faces: { all: TILES.reactor_core } },
-  glowing_obsidian: { solid: true, placeable: true, emissive: 0xa24dff, faces: { all: TILES.glowing_obsidian } },
-  netherrack: { solid: true, placeable: true, faces: { all: TILES.netherrack } },
-  lava: { solid: false, placeable: true, transparent: true, emissive: 0xff6a00, faces: { all: TILES.lava } },
-  sign: { solid: false, placeable: false },
+
+  pumpkin: {
+    solid: true,
+    placeable: true,
+    faces: {
+      top: TILES.pumpkin_top,
+      bottom: TILES.pumpkin_top,
+      side: TILES.pumpkin_side,
+      front: TILES.pumpkin_side,
+    },
+  },
+
+  sign: {
+    solid: false,
+    placeable: true,
+    isSign: true,
+    faces: { all: TILES.sign_plank },
+  },
+
+  reactor_core: {
+    solid: true,
+    placeable: true,
+    emissive: 0x5a2a88,
+    faces: { all: TILES.reactor_core },
+  },
+
+  glowing_obsidian: {
+    solid: true,
+    placeable: true,
+    emissive: 0xa24dff,
+    faces: { all: TILES.glowing_obsidian },
+  },
+
+  netherrack: {
+    solid: true,
+    placeable: true,
+    faces: { all: TILES.netherrack },
+  },
+
+  lava: {
+    solid: false,
+    placeable: true,
+    transparent: true,
+    emissive: 0xff6a00,
+    faces: { all: TILES.lava },
+  },
 };
 
 const HOTBAR = [
-  "grass","dirt","stone","cobblestone","sand","gravel","planks","wood","leaves","glass",
-  "bookshelf","mossy_cobblestone","obsidian","gold","iron","diamond",
-  "wool_white","wool_red","wool_yellow","wool_green","wool_blue",
-  "pumpkin","reactor_core","glowing_obsidian","netherrack","lava"
+  "grass",
+  "dirt",
+  "stone",
+  "cobblestone",
+  "sand",
+  "gravel",
+  "planks",
+  "wood",
+  "leaves",
+  "glass",
+  "bookshelf",
+  "mossy_cobblestone",
+  "obsidian",
+  "gold",
+  "iron",
+  "diamond",
+  "wool_white",
+  "wool_red",
+  "wool_yellow",
+  "wool_green",
+  "wool_blue",
+  "pumpkin",
+  "sign",
+  "reactor_core",
+  "glowing_obsidian",
+  "netherrack",
+  "lava",
 ];
 
 const FACE_ORDER = ["right", "left", "top", "bottom", "front", "back"];
@@ -166,7 +271,12 @@ async function setupThree() {
   app.scene.background = new THREE.Color(0x87c6ff);
   app.scene.fog = new THREE.Fog(0x87c6ff, 18, 60);
 
-  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
+  app.camera = new THREE.PerspectiveCamera(
+    72,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
 
   app.scene.add(new THREE.AmbientLight(0xffffff, 1.02));
 
@@ -278,9 +388,11 @@ function buildWorld() {
   setBlock(x - 1, y - 1, z - 1, "gold");
   setBlock(x,     y - 1, z - 1, "cobblestone");
   setBlock(x + 1, y - 1, z - 1, "gold");
+
   setBlock(x - 1, y - 1, z,     "cobblestone");
   setBlock(x,     y - 1, z,     "cobblestone");
   setBlock(x + 1, y - 1, z,     "cobblestone");
+
   setBlock(x - 1, y - 1, z + 1, "gold");
   setBlock(x,     y - 1, z + 1, "cobblestone");
   setBlock(x + 1, y - 1, z + 1, "gold");
@@ -322,13 +434,20 @@ function buildTree(x, y, z) {
 
 function buildHighlight() {
   const geo = new THREE.BoxGeometry(1.02, 1.02, 1.02);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.45 });
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.45,
+  });
   app.highlight = new THREE.Mesh(geo, mat);
   app.highlight.visible = false;
   app.scene.add(app.highlight);
 }
 
 function createSign(x, y, z, text = "Reactor") {
+  removeSignAt(x, y, z);
+
   const group = new THREE.Group();
   group.position.set(x + 0.5, y, z + 0.5);
 
@@ -340,16 +459,10 @@ function createSign(x, y, z, text = "Reactor") {
   group.add(post);
 
   const boardGeo = new THREE.BoxGeometry(0.9, 0.55, 0.08);
-  const boardTex = makeTileTexture(TILES.sign_plank[0], TILES.sign_plank[1], app.atlas);
-  const boardMat = new THREE.MeshLambertMaterial({ map: boardTex });
+  const boardMat = makeSignBoardMaterial(text);
   const board = new THREE.Mesh(boardGeo, boardMat);
   board.position.set(0, 1.0, 0);
   group.add(board);
-
-  const labelSprite = makeTextSprite(text);
-  labelSprite.position.set(0, 1.02, 0.05);
-  labelSprite.scale.set(0.9, 0.3, 1);
-  group.add(labelSprite);
 
   group.userData = {
     type: "sign",
@@ -358,7 +471,6 @@ function createSign(x, y, z, text = "Reactor") {
     y,
     z,
     board,
-    labelSprite,
   };
 
   app.decoGroup.add(group);
@@ -366,84 +478,138 @@ function createSign(x, y, z, text = "Reactor") {
   return group;
 }
 
-function makeTextSprite(text) {
+function makeSignBoardMaterial(text) {
   const canvasEl = document.createElement("canvas");
   canvasEl.width = 256;
-  canvasEl.height = 96;
+  canvasEl.height = 128;
   const ctx = canvasEl.getContext("2d");
 
-  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
   ctx.fillStyle = "#c49a5a";
   ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+
   ctx.strokeStyle = "#7a5528";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, canvasEl.width - 8, canvasEl.height - 8);
+  ctx.lineWidth = 10;
+  ctx.strokeRect(5, 5, canvasEl.width - 10, canvasEl.height - 10);
 
   ctx.fillStyle = "#2b1c0f";
-  ctx.font = "bold 36px Arial";
+  ctx.font = "bold 30px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, canvasEl.width / 2, canvasEl.height / 2);
 
-  const tex = new THREE.CanvasTexture(canvasEl);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
+  const lines = wrapSignText(ctx, text, 3, 180);
+  const lineHeight = 28;
+  const startY = canvasEl.height / 2 - ((lines.length - 1) * lineHeight) / 2;
 
-  const material = new THREE.SpriteMaterial({
-    map: tex,
-    transparent: true,
-    depthWrite: false,
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvasEl.width / 2, startY + i * lineHeight);
   });
 
-  return new THREE.Sprite(material);
+  const frontTex = new THREE.CanvasTexture(canvasEl);
+  frontTex.colorSpace = THREE.SRGBColorSpace;
+  frontTex.magFilter = THREE.NearestFilter;
+  frontTex.minFilter = THREE.NearestFilter;
+
+  const plankTex = () =>
+    makeTileTexture(TILES.sign_plank[0], TILES.sign_plank[1], app.atlas);
+
+  return [
+    new THREE.MeshLambertMaterial({ map: plankTex() }),
+    new THREE.MeshLambertMaterial({ map: plankTex() }),
+    new THREE.MeshLambertMaterial({ map: plankTex() }),
+    new THREE.MeshLambertMaterial({ map: plankTex() }),
+    new THREE.MeshLambertMaterial({ map: frontTex }),
+    new THREE.MeshLambertMaterial({ map: plankTex() }),
+  ];
 }
 
-function updateSignText(signGroup, text) {
-  const old = signGroup.userData.labelSprite;
-  signGroup.remove(old);
-  old.material.map?.dispose?.();
-  old.material.dispose?.();
+function wrapSignText(ctx, text, maxLines = 3, maxWidth = 180) {
+  const words = (text || "").split(/\s+/).filter(Boolean);
+  if (words.length === 0) return ["..."];
 
-  const replacement = makeTextSprite(text);
-  replacement.position.set(0, 1.02, 0.05);
-  replacement.scale.set(0.9, 0.3, 1);
-  signGroup.add(replacement);
+  const lines = [];
+  let current = "";
 
-  signGroup.userData.labelSprite = replacement;
-  signGroup.userData.text = text;
-}
-
-function editNearestSign() {
-  if (app.signs.length === 0) {
-    showMessage("No sign found.");
-    return;
-  }
-
-  let best = null;
-  let bestDist = Infinity;
-
-  for (const sign of app.signs) {
-    const dx = sign.position.x - app.playerPos.x;
-    const dy = sign.position.y - app.playerPos.y;
-    const dz = sign.position.z - app.playerPos.z;
-    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = sign;
+  for (const word of words) {
+    const test = current ? current + " " + word : word;
+    if (ctx.measureText(test).width <= maxWidth) {
+      current = test;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (lines.length >= maxLines - 1) break;
     }
   }
 
-  if (!best || bestDist > 8) {
-    showMessage("Move closer to the sign.");
-    return;
+  if (current && lines.length < maxLines) {
+    lines.push(current);
   }
 
-  const nextText = window.prompt("Sign text:", best.userData.text || "Reactor");
-  if (nextText === null) return;
+  while (lines.length > maxLines) lines.pop();
 
-  updateSignText(best, nextText.trim() || "Reactor");
+  const final = lines.slice(0, maxLines);
+  if (final.length === maxLines) {
+    while (ctx.measureText(final[final.length - 1]).width > maxWidth && final[final.length - 1].length > 1) {
+      final[final.length - 1] = final[final.length - 1].slice(0, -1);
+    }
+  }
+
+  return final;
+}
+
+function updateSignText(signGroup, text) {
+  const board = signGroup.userData.board;
+
+  if (Array.isArray(board.material)) {
+    board.material.forEach((m) => {
+      m.map?.dispose?.();
+      m.dispose?.();
+    });
+  }
+
+  board.material = makeSignBoardMaterial(text);
+  signGroup.userData.text = text;
+}
+
+function editSign(signGroup) {
+  const nextText = window.prompt("Sign text:", signGroup.userData.text || "Reactor");
+  if (nextText === null) return;
+  updateSignText(signGroup, nextText.trim() || "...");
   showMessage("Sign updated.");
+}
+
+function removeSignAt(x, y, z) {
+  const idx = app.signs.findIndex(
+    (sign) => sign.userData.x === x && sign.userData.y === y && sign.userData.z === z
+  );
+  if (idx === -1) return;
+
+  const sign = app.signs[idx];
+  sign.traverse((obj) => {
+    if (Array.isArray(obj.material)) {
+      obj.material.forEach((m) => {
+        m.map?.dispose?.();
+        m.dispose?.();
+      });
+    } else {
+      obj.material?.map?.dispose?.();
+      obj.material?.dispose?.();
+    }
+    obj.geometry?.dispose?.();
+  });
+
+  app.decoGroup.remove(sign);
+  app.signs.splice(idx, 1);
+}
+
+function getSignAt(x, y, z) {
+  return (
+    app.signs.find(
+      (sign) =>
+        sign.userData.x === x &&
+        sign.userData.y === y &&
+        sign.userData.z === z
+    ) || null
+  );
 }
 
 function key(x, y, z) {
@@ -578,15 +744,6 @@ function bindControls() {
     tryActivateReactor();
   });
 
-  activateBtn.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-  });
-
-  activateBtn.addEventListener("dblclick", (e) => {
-    e.preventDefault();
-    editNearestSign();
-  });
-
   lookPad.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     app.touchLookState.active = true;
@@ -614,12 +771,6 @@ function bindControls() {
   lookPad.addEventListener("pointerup", stopLook);
   lookPad.addEventListener("pointercancel", stopLook);
   lookPad.addEventListener("pointerleave", stopLook);
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "e") {
-      editNearestSign();
-    }
-  });
 }
 
 function updateCamera() {
@@ -713,6 +864,31 @@ function raycastBlocks() {
   return app.raycaster.intersectObjects([...app.blockMeshes.values()], false)[0] || null;
 }
 
+function raycastSign() {
+  const dir = getLookDirection();
+  let best = null;
+  let bestDist = REACH;
+
+  for (const sign of app.signs) {
+    const pos = new THREE.Vector3(
+      sign.userData.x + 0.5,
+      sign.userData.y + 1.0,
+      sign.userData.z + 0.5
+    );
+    const to = pos.clone().sub(app.camera.position);
+    const dist = to.length();
+    if (dist > REACH) continue;
+
+    const alignment = to.normalize().dot(dir);
+    if (alignment > 0.98 && dist < bestDist) {
+      best = sign;
+      bestDist = dist;
+    }
+  }
+
+  return best;
+}
+
 function updateHighlight() {
   const hit = raycastBlocks();
   if (!hit) {
@@ -725,12 +901,29 @@ function updateHighlight() {
 
 function breakTargetBlock() {
   const hit = raycastBlocks();
-  if (!hit) return;
-  const { x, y, z } = hit.object.userData;
-  setBlock(x, y, z, "air");
+  if (hit) {
+    const { x, y, z, blockId } = hit.object.userData;
+    if (blockId === "reactor_core") {
+      showMessage("Don't break the reactor core.");
+      return;
+    }
+    setBlock(x, y, z, "air");
+    return;
+  }
+
+  const sign = raycastSign();
+  if (sign) {
+    removeSignAt(sign.userData.x, sign.userData.y, sign.userData.z);
+    showMessage("Sign removed.");
+  }
 }
 
 function placeSelectedBlock() {
+  if (app.selectedBlockId === "sign") {
+    placeOrEditSign();
+    return;
+  }
+
   const hit = raycastBlocks();
   if (!hit) return;
 
@@ -743,6 +936,7 @@ function placeSelectedBlock() {
   const z = base.z + normal.z;
 
   if (getBlock(x, y, z) !== "air") return;
+  if (getSignAt(x, y, z)) return;
 
   const center = new THREE.Vector3(x + 0.5, y + 0.5, z + 0.5);
   const dx = Math.abs(app.playerPos.x - center.x);
@@ -751,6 +945,52 @@ function placeSelectedBlock() {
   if (dx < 0.8 && dy < 1.5 && dz < 0.8) return;
 
   setBlock(x, y, z, app.selectedBlockId);
+}
+
+function placeOrEditSign() {
+  const lookedSign = raycastSign();
+  if (lookedSign) {
+    editSign(lookedSign);
+    return;
+  }
+
+  const hit = raycastBlocks();
+  if (!hit) {
+    showMessage("Look at a block to place a sign.");
+    return;
+  }
+
+  const normal = hit.face.normal.clone();
+  normal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).round();
+
+  const base = hit.object.userData;
+  const x = base.x + normal.x;
+  const y = base.y + normal.y;
+  const z = base.z + normal.z;
+
+  if (getBlock(x, y, z) !== "air") {
+    showMessage("No room for sign.");
+    return;
+  }
+  if (getSignAt(x, y, z)) {
+    showMessage("Sign already there.");
+    return;
+  }
+
+  const center = new THREE.Vector3(x + 0.5, y + 0.5, z + 0.5);
+  const dx = Math.abs(app.playerPos.x - center.x);
+  const dy = Math.abs(app.playerPos.y - center.y);
+  const dz = Math.abs(app.playerPos.z - center.z);
+  if (dx < 0.8 && dy < 1.5 && dz < 0.8) {
+    showMessage("Too close to place sign.");
+    return;
+  }
+
+  const text = window.prompt("Sign text:", "Reactor");
+  if (text === null) return;
+
+  createSign(x, y, z, text.trim() || "...");
+  showMessage("Sign placed.");
 }
 
 function tryActivateReactor() {
@@ -775,9 +1015,11 @@ function tryActivateReactor() {
     [x - 1, y - 1, z - 1, "gold"],
     [x,     y - 1, z - 1, "cobblestone"],
     [x + 1, y - 1, z - 1, "gold"],
+
     [x - 1, y - 1, z,     "cobblestone"],
     [x,     y - 1, z,     "cobblestone"],
     [x + 1, y - 1, z,     "cobblestone"],
+
     [x - 1, y - 1, z + 1, "gold"],
     [x,     y - 1, z + 1, "cobblestone"],
     [x + 1, y - 1, z + 1, "gold"],
@@ -821,6 +1063,185 @@ function tryActivateReactor() {
 
   app.reactorActive = true;
   showMessage("Nether Reactor activated!");
+
+  pulseBlock(x, y, z, 8, 120);
+  clearItemEntities();
+
+  const buildSteps = buildReactorRoomSteps(x, y, z);
+  buildSteps.forEach((step, i) => {
+    const timer = setTimeout(() => {
+      step();
+    }, i * 35);
+    app.reactorTimers.push(timer);
+  });
+
+  const itemTimer = setTimeout(() => {
+    spawnReactorLoot(x, y, z);
+  }, 1200);
+  app.reactorTimers.push(itemTimer);
+
+  const finishTimer = setTimeout(() => {
+    app.reactorActive = false;
+    showMessage("Reactor room formed.");
+  }, 2600);
+  app.reactorTimers.push(finishTimer);
+}
+
+function buildReactorRoomSteps(cx, cy, cz) {
+  const steps = [];
+  const half = 4;
+  const floorY = cy - 1;
+  const roomTop = cy + 3;
+
+  for (let x = cx - half; x <= cx + half; x++) {
+    for (let z = cz - half; z <= cz + half; z++) {
+      steps.push(() => {
+        if (x === cx && z === cz) return;
+        setBlock(
+          x,
+          floorY,
+          z,
+          (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0
+            ? "glowing_obsidian"
+            : "netherrack"
+        );
+      });
+    }
+  }
+
+  for (let y = floorY + 1; y <= roomTop; y++) {
+    for (let x = cx - half; x <= cx + half; x++) {
+      for (let z = cz - half; z <= cz + half; z++) {
+        const isWall = x === cx - half || x === cx + half || z === cz - half || z === cz + half;
+        if (!isWall) {
+          steps.push(() => {
+            if (!(x === cx && y === cy && z === cz)) setBlock(x, y, z, "air");
+          });
+        } else {
+          steps.push(() => {
+            if (y === floorY + 1 && z === cz - half && x === cx) {
+              setBlock(x, y, z, "air");
+              return;
+            }
+            if (y === floorY + 2 && z === cz - half && x === cx) {
+              setBlock(x, y, z, "air");
+              return;
+            }
+            setBlock(
+              x,
+              y,
+              z,
+              (x + y + z) % 3 === 0 ? "glowing_obsidian" : "netherrack"
+            );
+          });
+        }
+      }
+    }
+  }
+
+  for (let x = cx - half; x <= cx + half; x++) {
+    for (let z = cz - half; z <= cz + half; z++) {
+      steps.push(() => {
+        if (x === cx && z === cz) {
+          setBlock(x, roomTop, z, "glowing_obsidian");
+        } else {
+          setBlock(
+            x,
+            roomTop,
+            z,
+            (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0
+              ? "netherrack"
+              : "glowing_obsidian"
+          );
+        }
+      });
+    }
+  }
+
+  return steps;
+}
+
+function spawnReactorLoot(cx, cy, cz) {
+  const loot = [
+    "gold_ingot",
+    "iron_ingot",
+    "diamond",
+    "apple",
+    "mushroom_red",
+    "mushroom_brown",
+    "sugar",
+    "feather",
+    "gunpowder",
+    "glow_dust",
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    const id = loot[i % loot.length];
+    const px = cx + (Math.random() * 5 - 2.5);
+    const py = cy + 0.9 + Math.random() * 1.2;
+    const pz = cz + (Math.random() * 5 - 2.5);
+    spawnItemEntity(id, px, py, pz);
+  }
+}
+
+function spawnItemEntity(itemId, x, y, z) {
+  const tile = ITEM_TILES[itemId];
+  if (!tile || !app.itemAtlas) return;
+
+  const tex = makeTileTexture(tile[0], tile[1], app.itemAtlas);
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.1,
+  });
+
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.set(x, y, z);
+  sprite.scale.set(0.6, 0.6, 0.6);
+  app.itemGroup.add(sprite);
+
+  app.itemEntities.push({
+    sprite,
+    baseY: y,
+    phase: Math.random() * Math.PI * 2,
+    spin: (Math.random() * 2 - 1) * 0.02,
+  });
+}
+
+function clearItemEntities() {
+  app.itemEntities.forEach(({ sprite }) => {
+    app.itemGroup.remove(sprite);
+    sprite.material.map?.dispose?.();
+    sprite.material.dispose?.();
+  });
+  app.itemEntities = [];
+}
+
+function updateItemEntities(timeSeconds) {
+  app.itemEntities.forEach((entity, i) => {
+    entity.sprite.position.y = entity.baseY + Math.sin(timeSeconds * 2 + entity.phase) * 0.12;
+    entity.sprite.material.rotation += entity.spin;
+    entity.sprite.scale.setScalar(0.6 + Math.sin(timeSeconds * 2.5 + i) * 0.03);
+  });
+}
+
+function pulseBlock(x, y, z, count, interval) {
+  const mesh = app.blockMeshes.get(key(x, y, z));
+  if (!mesh) return;
+
+  let n = 0;
+  const base = mesh.scale.clone();
+
+  const id = setInterval(() => {
+    n++;
+    mesh.scale.setScalar(n % 2 === 0 ? 1 : 1.18);
+    if (n >= count) {
+      clearInterval(id);
+      mesh.scale.copy(base);
+    }
+  }, interval);
+
+  app.reactorTimers.push(id);
 }
 
 function showMessage(text) {
@@ -850,5 +1271,6 @@ function animate(time = 0) {
   movePlayer(dt);
   updateCamera();
   updateHighlight();
+  updateItemEntities(time / 1000);
   app.renderer.render(app.scene, app.camera);
 }
