@@ -303,6 +303,7 @@ async function setupThree() {
   app.atlas.wrapS = THREE.ClampToEdgeWrapping;
   app.atlas.wrapT = THREE.ClampToEdgeWrapping;
 
+  try {
   app.itemAtlas = await loader.loadAsync("assets/items.png");
   app.itemAtlas.magFilter = THREE.NearestFilter;
   app.itemAtlas.minFilter = THREE.NearestFilter;
@@ -310,6 +311,10 @@ async function setupThree() {
   app.itemAtlas.colorSpace = THREE.SRGBColorSpace;
   app.itemAtlas.wrapS = THREE.ClampToEdgeWrapping;
   app.itemAtlas.wrapT = THREE.ClampToEdgeWrapping;
+} catch (err) {
+  console.warn("items.png not found, continuing without item atlas", err);
+  app.itemAtlas = null;
+}
 
   window.addEventListener("resize", onResize);
 }
