@@ -10,7 +10,9 @@ const EYE_HEIGHT = 1.55;
 const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
-const LOOK_SENSITIVITY = 0.const TILES = {
+const LOOK_SENSITIVITY = 0.0032;
+
+const TILES = {
   grass_top: [0, 0],
   stone: [1, 0],
   dirt: [2, 0],
@@ -29,21 +31,17 @@ const LOOK_SENSITIVITY = 0.const TILES = {
   obsidian: [5, 2],
   glass: [1, 3],
   leaves: [5, 3],
-
   wool_white: [0, 4],
-  wool_red: [0, 12],
-  wool_yellow: [1, 12],
-  wool_green: [2, 12],
-  wool_blue: [3, 12],
-
-  pumpkin_top: [6, 7],
-  pumpkin_side: [7, 7],
-
+  wool_red: [1, 4],
+  wool_yellow: [2, 4],
+  wool_green: [3, 4],
+  wool_blue: [4, 4],
+  pumpkin_top: [6, 6],
+  pumpkin_side: [7, 6],
   reactor_core: [10, 11],
   glowing_obsidian: [11, 11],
   netherrack: [14, 14],
   lava: [15, 15],
-
   sign_plank: [4, 0],
 };
 
@@ -244,22 +242,40 @@ const breakBtn = document.getElementById("breakBtn");
 const jumpBtn = document.getElementById("jumpBtn");
 const lookPad = document.getElementById("lookPad");
 
-startBtn.addEventListener("click", init);
+if (startBtn) {
+  startBtn.addEventListener("click", init);
+} else {
+  console.error("Start button not found");
+}
 
 async function init() {
+  if (!startBtn) return;
+
   startBtn.disabled = true;
   showMessage("Loading...");
-  await setupThree();
-  buildHotbar();
-  buildWorld();
-  buildHighlight();
-  bindControls();
 
-  titleScreen.classList.add("hidden");
-  hud.classList.remove("hidden");
-  app.running = true;
-  showMessage("Creative mode ready.");
-  animate();
+  try {
+    if (!canvas) throw new Error("Missing #game canvas");
+    if (!titleScreen) throw new Error("Missing #titleScreen");
+    if (!hud) throw new Error("Missing #hud");
+    if (!hotbarEl) throw new Error("Missing #hotbar");
+
+    await setupThree();
+    buildHotbar();
+    buildWorld();
+    buildHighlight();
+    bindControls();
+
+    titleScreen.classList.add("hidden");
+    hud.classList.remove("hidden");
+    app.running = true;
+    showMessage("Creative mode ready.");
+    animate();
+  } catch (err) {
+    console.error("Startup failed:", err);
+    showMessage("Startup failed. Check console.");
+    startBtn.disabled = false;
+  }
 }
 
 async function setupThree() {
@@ -272,7 +288,12 @@ async function setupThree() {
   app.scene.background = new THREE.Color(0x87c6ff);
   app.scene.fog = new THREE.Fog(0x87c6ff, 18, 60);
 
-  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
+  app.camera = new THREE.PerspectiveCamera(
+    72,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
 
   app.scene.add(new THREE.AmbientLight(0xffffff, 1.02));
 
@@ -311,12 +332,6 @@ async function setupThree() {
     console.warn("items.png not found, continuing without item atlas", err);
     app.itemAtlas = null;
   }
-
-  window.addEventListener("resize", onResize);
-} catch (err) {
-  console.warn("items.png not found, continuing without item atlas", err);
-  app.itemAtlas = null;
-}
 
   window.addEventListener("resize", onResize);
 }
@@ -665,6 +680,9 @@ function disposeMesh(mesh) {
       m.map?.dispose?.();
       m.dispose?.();
     });
+  } else {
+    mesh.material?.map?.dispose?.();
+    mesh.material?.dispose?.();
   }
 }
 
@@ -729,56 +747,66 @@ function bindControls() {
     btn.addEventListener("pointerleave", up);
   });
 
-  jumpBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (app.onGround) {
-      app.velocity.y = JUMP_SPEED;
-      app.onGround = false;
-    }
-  });
+  if (jumpBtn) {
+    jumpBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (app.onGround) {
+        app.velocity.y = JUMP_SPEED;
+        app.onGround = false;
+      }
+    });
+  }
 
-  placeBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    placeSelectedBlock();
-  });
+  if (placeBtn) {
+    placeBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      placeSelectedBlock();
+    });
+  }
 
-  breakBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    breakTargetBlock();
-  });
+  if (breakBtn) {
+    breakBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      breakTargetBlock();
+    });
+  }
 
-  activateBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    tryActivateReactor();
-  });
+  if (activateBtn) {
+    activateBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      tryActivateReactor();
+    });
+  }
 
-  lookPad.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    app.touchLookState.active = true;
-    app.touchLookState.x = e.clientX;
-    app.touchLookState.y = e.clientY;
-  });
+  if (lookPad) {
+    lookPad.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      app.touchLookState.active = true;
+      app.touchLookState.x = e.clientX;
+      app.touchLookState.y = e.clientY;
+    });
 
-  lookPad.addEventListener("pointermove", (e) => {
-    if (!app.touchLookState.active) return;
-    e.preventDefault();
-    const dx = e.clientX - app.touchLookState.x;
-    const dy = e.clientY - app.touchLookState.y;
-    app.touchLookState.x = e.clientX;
-    app.touchLookState.y = e.clientY;
-    app.yaw -= dx * LOOK_SENSITIVITY;
-    app.pitch -= dy * LOOK_SENSITIVITY;
-    app.pitch = Math.max(-1.45, Math.min(1.45, app.pitch));
-  });
+    lookPad.addEventListener("pointermove", (e) => {
+      if (!app.touchLookState.active) return;
+      e.preventDefault();
+      const dx = e.clientX - app.touchLookState.x;
+      const dy = e.clientY - app.touchLookState.y;
+      app.touchLookState.x = e.clientX;
+      app.touchLookState.y = e.clientY;
+      app.yaw -= dx * LOOK_SENSITIVITY;
+      app.pitch -= dy * LOOK_SENSITIVITY;
+      app.pitch = Math.max(-1.45, Math.min(1.45, app.pitch));
+    });
 
-  const stopLook = (e) => {
-    e.preventDefault();
-    app.touchLookState.active = false;
-  };
+    const stopLook = (e) => {
+      e.preventDefault();
+      app.touchLookState.active = false;
+    };
 
-  lookPad.addEventListener("pointerup", stopLook);
-  lookPad.addEventListener("pointercancel", stopLook);
-  lookPad.addEventListener("pointerleave", stopLook);
+    lookPad.addEventListener("pointerup", stopLook);
+    lookPad.addEventListener("pointercancel", stopLook);
+    lookPad.addEventListener("pointerleave", stopLook);
+  }
 }
 
 function updateCamera() {
@@ -908,22 +936,23 @@ function updateHighlight() {
 }
 
 function breakTargetBlock() {
-  const hit = raycastBlocks();
-  if (hit) {
-    const { x, y, z, blockId } = hit.object.userData;
-    if (blockId === "reactor_core") {
-      showMessage("Don't break the reactor core.");
-      return;
-    }
-    setBlock(x, y, z, "air");
-    return;
-  }
-
   const sign = raycastSign();
   if (sign) {
     removeSignAt(sign.userData.x, sign.userData.y, sign.userData.z);
     showMessage("Sign removed.");
+    return;
   }
+
+  const hit = raycastBlocks();
+  if (!hit) return;
+
+  const { x, y, z, blockId } = hit.object.userData;
+  if (blockId === "reactor_core") {
+    showMessage("Don't break the reactor core.");
+    return;
+  }
+
+  setBlock(x, y, z, "air");
 }
 
 function placeSelectedBlock() {
@@ -1023,20 +1052,16 @@ function tryActivateReactor() {
     [x - 1, y - 1, z - 1, "gold"],
     [x,     y - 1, z - 1, "cobblestone"],
     [x + 1, y - 1, z - 1, "gold"],
-
     [x - 1, y - 1, z,     "cobblestone"],
     [x,     y - 1, z,     "cobblestone"],
     [x + 1, y - 1, z,     "cobblestone"],
-
     [x - 1, y - 1, z + 1, "gold"],
     [x,     y - 1, z + 1, "cobblestone"],
     [x + 1, y - 1, z + 1, "gold"],
-
     [x - 1, y, z - 1, "cobblestone"],
     [x + 1, y, z - 1, "cobblestone"],
     [x - 1, y, z + 1, "cobblestone"],
     [x + 1, y, z + 1, "cobblestone"],
-
     [x,     y + 1, z - 1, "cobblestone"],
     [x - 1, y + 1, z,     "cobblestone"],
     [x,     y + 1, z,     "cobblestone"],
@@ -1170,6 +1195,8 @@ function buildReactorRoomSteps(cx, cy, cz) {
 }
 
 function spawnReactorLoot(cx, cy, cz) {
+  if (!app.itemAtlas) return;
+
   const loot = [
     "gold_ingot",
     "iron_ingot",
@@ -1253,6 +1280,11 @@ function pulseBlock(x, y, z, count, interval) {
 }
 
 function showMessage(text) {
+  if (!messageEl) {
+    console.log(text);
+    return;
+  }
+
   messageEl.textContent = text;
   messageEl.classList.add("show");
   clearTimeout(showMessage._timer);
