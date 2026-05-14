@@ -272,12 +272,7 @@ async function setupThree() {
   app.scene.background = new THREE.Color(0x87c6ff);
   app.scene.fog = new THREE.Fog(0x87c6ff, 18, 60);
 
-  app.camera = new THREE.PerspectiveCamera(
-    72,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
+  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
 
   app.scene.add(new THREE.AmbientLight(0xffffff, 1.02));
 
@@ -295,6 +290,7 @@ async function setupThree() {
   app.scene.add(app.decoGroup);
 
   const loader = new THREE.TextureLoader();
+
   app.atlas = await loader.loadAsync("assets/terrain.png");
   app.atlas.magFilter = THREE.NearestFilter;
   app.atlas.minFilter = THREE.NearestFilter;
@@ -304,13 +300,19 @@ async function setupThree() {
   app.atlas.wrapT = THREE.ClampToEdgeWrapping;
 
   try {
-  app.itemAtlas = await loader.loadAsync("assets/items.png");
-  app.itemAtlas.magFilter = THREE.NearestFilter;
-  app.itemAtlas.minFilter = THREE.NearestFilter;
-  app.itemAtlas.generateMipmaps = false;
-  app.itemAtlas.colorSpace = THREE.SRGBColorSpace;
-  app.itemAtlas.wrapS = THREE.ClampToEdgeWrapping;
-  app.itemAtlas.wrapT = THREE.ClampToEdgeWrapping;
+    app.itemAtlas = await loader.loadAsync("assets/items.png");
+    app.itemAtlas.magFilter = THREE.NearestFilter;
+    app.itemAtlas.minFilter = THREE.NearestFilter;
+    app.itemAtlas.generateMipmaps = false;
+    app.itemAtlas.colorSpace = THREE.SRGBColorSpace;
+    app.itemAtlas.wrapS = THREE.ClampToEdgeWrapping;
+    app.itemAtlas.wrapT = THREE.ClampToEdgeWrapping;
+  } catch (err) {
+    console.warn("items.png not found, continuing without item atlas", err);
+    app.itemAtlas = null;
+  }
+
+  window.addEventListener("resize", onResize);
 } catch (err) {
   console.warn("items.png not found, continuing without item atlas", err);
   app.itemAtlas = null;
