@@ -11,9 +11,8 @@ const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
 const LOOK_SENSITIVITY = 0.0032;
-
 const TILES = {
-  grass_top: [0, 0],
+  grass_top: [3, 3],
   stone: [1, 0],
   dirt: [2, 0],
   grass_side: [3, 0],
