@@ -31,21 +31,17 @@ const TILES = {
   obsidian: [5, 2],
   glass: [1, 3],
   leaves: [5, 3],
-
   wool_white: [0, 4],
-  wool_red: [0, 4],
-  wool_yellow: [0, 4],
-  wool_green: [0, 4],
-  wool_blue: [0, 4],
-
-  pumpkin_top: [2, 0],
-  pumpkin_side: [2, 0],
-
+  wool_red: [1, 4],
+  wool_yellow: [2, 4],
+  wool_green: [3, 4],
+  wool_blue: [4, 4],
+  pumpkin_top: [6, 6],
+  pumpkin_side: [7, 6],
   reactor_core: [10, 14],
   glowing_obsidian: [10, 13],
   netherrack: [7, 6],
   lava: [15, 15],
-
   sign_plank: [4, 0],
 };
 
@@ -148,14 +144,12 @@ const BLOCKS = {
   reactor_core: {
     solid: true,
     placeable: true,
-    emissive: 0x5a2a88,
     faces: { all: TILES.reactor_core },
   },
 
   glowing_obsidian: {
     solid: true,
     placeable: true,
-    emissive: 0xa24dff,
     faces: { all: TILES.glowing_obsidian },
   },
 
@@ -292,12 +286,7 @@ async function setupThree() {
   app.scene.background = new THREE.Color(0x87c6ff);
   app.scene.fog = new THREE.Fog(0x87c6ff, 18, 60);
 
-  app.camera = new THREE.PerspectiveCamera(
-    72,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
+  app.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
 
   app.scene.add(new THREE.AmbientLight(0xffffff, 1.02));
 
@@ -696,6 +685,7 @@ function makeFaceMaterials(blockId) {
     const blockFace = faceToBlockFace(faceName);
     const tile = getFaceTile(blockId, blockFace);
     const tex = makeTileTexture(tile[0], tile[1], app.atlas);
+
     return new THREE.MeshLambertMaterial({
       map: tex,
       transparent: !!def.transparent,
