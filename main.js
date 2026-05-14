@@ -41,8 +41,8 @@ const TILES = {
   pumpkin_top: [2, 0],
   pumpkin_side: [2, 0],
 
-  reactor_core: [10, 15],
-  glowing_obsidian: [10, 14],
+  reactor_core: [10, 14],
+  glowing_obsidian: [10, 13],
   netherrack: [7, 6],
   lava: [15, 15],
 
