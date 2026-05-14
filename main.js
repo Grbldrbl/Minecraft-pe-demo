@@ -11,6 +11,7 @@ const MOVE_SPEED = 4.8;
 const JUMP_SPEED = 6.2;
 const GRAVITY = 18;
 const LOOK_SENSITIVITY = 0.0032;
+
 const TILES = {
   grass_top: [0, 0],
   stone: [1, 0],
@@ -41,6 +42,7 @@ const TILES = {
   glowing_obsidian: [7, 13],
   netherrack: [7, 15],
   lava: [15, 15],
+  sign_plank: [4, 0],
 };
 
 const ITEM_TILES = {
@@ -84,6 +86,7 @@ const BLOCKS = {
   glowing_obsidian: { solid: true, placeable: true, emissive: 0xa24dff, faces: { all: TILES.glowing_obsidian } },
   netherrack: { solid: true, placeable: true, faces: { all: TILES.netherrack } },
   lava: { solid: false, placeable: true, transparent: true, emissive: 0xff6a00, faces: { all: TILES.lava } },
+  sign: { solid: false, placeable: false },
 };
 
 const HOTBAR = [
@@ -103,6 +106,7 @@ const app = {
   itemAtlas: null,
   worldGroup: null,
   itemGroup: null,
+  decoGroup: null,
   blockMeshes: new Map(),
   blocks: new Map(),
   selectedBlockId: "cobblestone",
@@ -119,6 +123,7 @@ const app = {
   highlight: null,
   raycaster: new THREE.Raycaster(),
   itemEntities: [],
+  signs: [],
 };
 
 const titleScreen = document.getElementById("titleScreen");
@@ -174,6 +179,9 @@ async function setupThree() {
 
   app.itemGroup = new THREE.Group();
   app.scene.add(app.itemGroup);
+
+  app.decoGroup = new THREE.Group();
+  app.scene.add(app.decoGroup);
 
   const loader = new THREE.TextureLoader();
   app.atlas = await loader.loadAsync("assets/terrain.png");
@@ -288,6 +296,8 @@ function buildWorld() {
   setBlock(x,     y + 1, z,     "cobblestone");
   setBlock(x + 1, y + 1, z,     "cobblestone");
   setBlock(x,     y + 1, z + 1, "cobblestone");
+
+  createSign(x + 3, 1, z, "Reactor");
 }
 
 function buildTree(x, y, z) {
@@ -316,6 +326,124 @@ function buildHighlight() {
   app.highlight = new THREE.Mesh(geo, mat);
   app.highlight.visible = false;
   app.scene.add(app.highlight);
+}
+
+function createSign(x, y, z, text = "Reactor") {
+  const group = new THREE.Group();
+  group.position.set(x + 0.5, y, z + 0.5);
+
+  const postGeo = new THREE.BoxGeometry(0.12, 0.9, 0.12);
+  const woodTex = makeTileTexture(TILES.wood_side[0], TILES.wood_side[1], app.atlas);
+  const woodMat = new THREE.MeshLambertMaterial({ map: woodTex });
+  const post = new THREE.Mesh(postGeo, woodMat);
+  post.position.set(0, 0.45, 0);
+  group.add(post);
+
+  const boardGeo = new THREE.BoxGeometry(0.9, 0.55, 0.08);
+  const boardTex = makeTileTexture(TILES.sign_plank[0], TILES.sign_plank[1], app.atlas);
+  const boardMat = new THREE.MeshLambertMaterial({ map: boardTex });
+  const board = new THREE.Mesh(boardGeo, boardMat);
+  board.position.set(0, 1.0, 0);
+  group.add(board);
+
+  const labelSprite = makeTextSprite(text);
+  labelSprite.position.set(0, 1.02, 0.05);
+  labelSprite.scale.set(0.9, 0.3, 1);
+  group.add(labelSprite);
+
+  group.userData = {
+    type: "sign",
+    text,
+    x,
+    y,
+    z,
+    board,
+    labelSprite,
+  };
+
+  app.decoGroup.add(group);
+  app.signs.push(group);
+  return group;
+}
+
+function makeTextSprite(text) {
+  const canvasEl = document.createElement("canvas");
+  canvasEl.width = 256;
+  canvasEl.height = 96;
+  const ctx = canvasEl.getContext("2d");
+
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  ctx.fillStyle = "#c49a5a";
+  ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+  ctx.strokeStyle = "#7a5528";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(4, 4, canvasEl.width - 8, canvasEl.height - 8);
+
+  ctx.fillStyle = "#2b1c0f";
+  ctx.font = "bold 36px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvasEl.width / 2, canvasEl.height / 2);
+
+  const tex = new THREE.CanvasTexture(canvasEl);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+
+  const material = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  return new THREE.Sprite(material);
+}
+
+function updateSignText(signGroup, text) {
+  const old = signGroup.userData.labelSprite;
+  signGroup.remove(old);
+  old.material.map?.dispose?.();
+  old.material.dispose?.();
+
+  const replacement = makeTextSprite(text);
+  replacement.position.set(0, 1.02, 0.05);
+  replacement.scale.set(0.9, 0.3, 1);
+  signGroup.add(replacement);
+
+  signGroup.userData.labelSprite = replacement;
+  signGroup.userData.text = text;
+}
+
+function editNearestSign() {
+  if (app.signs.length === 0) {
+    showMessage("No sign found.");
+    return;
+  }
+
+  let best = null;
+  let bestDist = Infinity;
+
+  for (const sign of app.signs) {
+    const dx = sign.position.x - app.playerPos.x;
+    const dy = sign.position.y - app.playerPos.y;
+    const dz = sign.position.z - app.playerPos.z;
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = sign;
+    }
+  }
+
+  if (!best || bestDist > 8) {
+    showMessage("Move closer to the sign.");
+    return;
+  }
+
+  const nextText = window.prompt("Sign text:", best.userData.text || "Reactor");
+  if (nextText === null) return;
+
+  updateSignText(best, nextText.trim() || "Reactor");
+  showMessage("Sign updated.");
 }
 
 function key(x, y, z) {
@@ -450,6 +578,15 @@ function bindControls() {
     tryActivateReactor();
   });
 
+  activateBtn.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  });
+
+  activateBtn.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    editNearestSign();
+  });
+
   lookPad.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     app.touchLookState.active = true;
@@ -477,6 +614,12 @@ function bindControls() {
   lookPad.addEventListener("pointerup", stopLook);
   lookPad.addEventListener("pointercancel", stopLook);
   lookPad.addEventListener("pointerleave", stopLook);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "e") {
+      editNearestSign();
+    }
+  });
 }
 
 function updateCamera() {
@@ -678,177 +821,6 @@ function tryActivateReactor() {
 
   app.reactorActive = true;
   showMessage("Nether Reactor activated!");
-
-  pulseBlock(x, y, z, 8, 120);
-  clearItemEntities();
-
-  const buildSteps = buildReactorRoomSteps(x, y, z);
-  buildSteps.forEach((step, i) => {
-    const timer = setTimeout(() => {
-      step();
-    }, i * 35);
-    app.reactorTimers.push(timer);
-  });
-
-  const itemTimer = setTimeout(() => {
-    spawnReactorLoot(x, y, z);
-  }, 1200);
-  app.reactorTimers.push(itemTimer);
-
-  const finishTimer = setTimeout(() => {
-    app.reactorActive = false;
-    showMessage("Reactor room formed.");
-  }, 2600);
-  app.reactorTimers.push(finishTimer);
-}
-
-function buildReactorRoomSteps(cx, cy, cz) {
-  const steps = [];
-  const half = 4;
-  const floorY = cy - 1;
-  const roomTop = cy + 3;
-
-  for (let x = cx - half; x <= cx + half; x++) {
-    for (let z = cz - half; z <= cz + half; z++) {
-      steps.push(() => {
-        if (x === cx && z === cz) return;
-        setBlock(x, floorY, z, (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0 ? "glowing_obsidian" : "netherrack");
-      });
-    }
-  }
-
-  for (let y = floorY + 1; y <= roomTop; y++) {
-    for (let x = cx - half; x <= cx + half; x++) {
-      for (let z = cz - half; z <= cz + half; z++) {
-        const isWall = x === cx - half || x === cx + half || z === cz - half || z === cz + half;
-        if (!isWall) {
-          steps.push(() => {
-            if (!(x === cx && y === cy && z === cz)) setBlock(x, y, z, "air");
-          });
-        } else {
-          steps.push(() => {
-            if (y === floorY + 1 && z === cz - half && x === cx) {
-              setBlock(x, y, z, "air");
-              return;
-            }
-            if (y === floorY + 2 && z === cz - half && x === cx) {
-              setBlock(x, y, z, "air");
-              return;
-            }
-            setBlock(x, y, z, (x + y + z) % 3 === 0 ? "glowing_obsidian" : "netherrack");
-          });
-        }
-      }
-    }
-  }
-
-  for (let x = cx - half; x <= cx + half; x++) {
-    for (let z = cz - half; z <= cz + half; z++) {
-      steps.push(() => {
-        if (x === cx && z === cz) {
-          setBlock(x, roomTop, z, "glowing_obsidian");
-        } else {
-          setBlock(x, roomTop, z, (Math.abs(x - cx) + Math.abs(z - cz)) % 2 === 0 ? "netherrack" : "glowing_obsidian");
-        }
-      });
-    }
-  }
-
-  for (let x = cx - 2; x <= cx + 2; x++) {
-    for (let z = cz - 2; z <= cz + 2; z++) {
-      if (x === cx && z === cz) continue;
-      steps.push(() => {
-        if (getBlock(x, cy, z) === "air") {
-          setBlock(x, cy, z, (x + z) % 2 === 0 ? "netherrack" : "air");
-        }
-      });
-    }
-  }
-
-  return steps;
-}
-
-function spawnReactorLoot(cx, cy, cz) {
-  const loot = [
-    "gold_ingot",
-    "iron_ingot",
-    "diamond",
-    "apple",
-    "mushroom_red",
-    "mushroom_brown",
-    "sugar",
-    "feather",
-    "gunpowder",
-    "glow_dust",
-  ];
-
-  for (let i = 0; i < 10; i++) {
-    const id = loot[i % loot.length];
-    const px = cx + (Math.random() * 5 - 2.5);
-    const py = cy + 0.9 + Math.random() * 1.2;
-    const pz = cz + (Math.random() * 5 - 2.5);
-    spawnItemEntity(id, px, py, pz);
-  }
-}
-
-function spawnItemEntity(itemId, x, y, z) {
-  const tile = ITEM_TILES[itemId];
-  if (!tile || !app.itemAtlas) return;
-
-  const tex = makeTileTexture(tile[0], tile[1], app.itemAtlas);
-  const mat = new THREE.SpriteMaterial({
-    map: tex,
-    transparent: true,
-    alphaTest: 0.1,
-  });
-
-  const sprite = new THREE.Sprite(mat);
-  sprite.position.set(x, y, z);
-  sprite.scale.set(0.6, 0.6, 0.6);
-  app.itemGroup.add(sprite);
-
-  app.itemEntities.push({
-    sprite,
-    baseY: y,
-    phase: Math.random() * Math.PI * 2,
-    spin: (Math.random() * 2 - 1) * 0.02,
-  });
-}
-
-function clearItemEntities() {
-  app.itemEntities.forEach(({ sprite }) => {
-    app.itemGroup.remove(sprite);
-    sprite.material.map?.dispose?.();
-    sprite.material.dispose?.();
-  });
-  app.itemEntities = [];
-}
-
-function updateItemEntities(timeSeconds) {
-  app.itemEntities.forEach((entity, i) => {
-    entity.sprite.position.y = entity.baseY + Math.sin(timeSeconds * 2 + entity.phase) * 0.12;
-    entity.sprite.material.rotation += entity.spin;
-    entity.sprite.scale.setScalar(0.6 + Math.sin(timeSeconds * 2.5 + i) * 0.03);
-  });
-}
-
-function pulseBlock(x, y, z, count, interval) {
-  const mesh = app.blockMeshes.get(key(x, y, z));
-  if (!mesh) return;
-
-  let n = 0;
-  const base = mesh.scale.clone();
-
-  const id = setInterval(() => {
-    n++;
-    mesh.scale.setScalar(n % 2 === 0 ? 1 : 1.18);
-    if (n >= count) {
-      clearInterval(id);
-      mesh.scale.copy(base);
-    }
-  }, interval);
-
-  app.reactorTimers.push(id);
 }
 
 function showMessage(text) {
@@ -878,6 +850,5 @@ function animate(time = 0) {
   movePlayer(dt);
   updateCamera();
   updateHighlight();
-  updateItemEntities(time / 1000);
   app.renderer.render(app.scene, app.camera);
 }
